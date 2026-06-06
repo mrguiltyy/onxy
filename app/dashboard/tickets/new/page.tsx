@@ -1,8 +1,8 @@
 'use client'
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { Suspense, useState } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, Send, AlertCircle } from 'lucide-react'
+import { ArrowLeft, Send, AlertCircle, Activity, Sparkles } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { supabaseBrowser } from '@/lib/supabase/client'
@@ -21,10 +21,23 @@ const PRIORITIES = [
 ]
 
 export default function NewTicketPage() {
+  return (
+    <Suspense fallback={null}>
+      <NewTicketForm />
+    </Suspense>
+  )
+}
+
+function NewTicketForm() {
   const router = useRouter()
+  const sp = useSearchParams()
+  const prefill   = sp.get('prefill')   ?? ''
+  const licenseId = sp.get('license')   ?? null
+  const skipTroubleshoot = sp.get('skip_troubleshoot') === '1'
+
   const [subject,  setSubject]  = useState('')
-  const [body,     setBody]     = useState('')
-  const [category, setCategory] = useState('general')
+  const [body,     setBody]     = useState(prefill ? decodeURIComponent(prefill) : '')
+  const [category, setCategory] = useState(licenseId ? 'technical' : 'general')
   const [priority, setPriority] = useState('medium')
   const [loading,  setLoading]  = useState(false)
   const [error,    setError]    = useState<string | null>(null)
@@ -40,15 +53,18 @@ export default function NewTicketPage() {
       if (!user) { setError('Not signed in.'); setLoading(false); return }
 
       interface NewTicket { id: string }
+      const insertPayload: Record<string, unknown> = {
+        user_id:  user.id,
+        subject:  subject.trim(),
+        category,
+        priority,
+        status:   'open',
+      }
+      if (licenseId) insertPayload.license_id = licenseId
+
       const { data: ticketRaw, error: tErr } = await supabase
         .from('tickets')
-        .insert({
-          user_id:       user.id,
-          subject:       subject.trim(),
-          category,
-          priority,
-          status:        'open',
-        } as never)
+        .insert(insertPayload as never)
         .select('id')
         .single<NewTicket>()
 
@@ -81,6 +97,28 @@ export default function NewTicketPage() {
           We respond fastest to tickets with specific subjects and clear detail.
         </p>
       </div>
+
+      {/* Troubleshooter recommendation */}
+      {!skipTroubleshoot && !prefill && (
+        <div
+          className="rounded-md p-4 mb-5 flex items-start gap-3"
+          style={{ background: 'var(--brand-faint)', border: '1px solid rgba(59,130,246,0.25)' }}
+        >
+          <Sparkles size={16} className="text-[var(--brand)] mt-0.5 shrink-0" />
+          <div className="flex-1">
+            <p className="font-semibold text-[13.5px] text-[var(--brand)]">Try the auto-troubleshooter first</p>
+            <p className="text-[12.5px] text-[var(--fg-dim)] mt-0.5 leading-relaxed">
+              Most issues (HWID resets, invalid key errors, expired licenses) get fixed in 30 seconds without opening a ticket.
+            </p>
+            <Link
+              href={licenseId ? `/dashboard/troubleshoot?license=${licenseId}` : '/dashboard/troubleshoot'}
+              className="btn btn-primary btn-sm mt-3 w-fit"
+            >
+              <Activity size={12} /> Run troubleshooter
+            </Link>
+          </div>
+        </div>
+      )}
 
       <div className="card p-6">
         {error && (

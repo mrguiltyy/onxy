@@ -82,18 +82,17 @@ export default async function LicensesPage() {
               </thead>
               <tbody>
                 {licenses.map(l => (
-                  <tr key={l.id}>
+                  <tr key={l.id} className="cursor-pointer hover:bg-[var(--surface-2)]">
                     <td>
-                      <div className="flex items-center gap-2">
+                      <Link href={`/dashboard/licenses/${l.id}`} className="flex items-center gap-2">
                         <code className="font-mono text-[12.5px] text-[var(--brand)]">
                           {l.key_prefix}-•••-•••
                         </code>
-                        <button className="btn btn-icon !p-1.5" title="Copy">
-                          <Copy size={11} />
-                        </button>
-                      </div>
+                      </Link>
                     </td>
-                    <td className="text-[var(--fg)] font-medium">{l.product}</td>
+                    <td className="text-[var(--fg)] font-medium">
+                      <Link href={`/dashboard/licenses/${l.id}`}>{l.product}</Link>
+                    </td>
                     <td><StatusPill status={l.status} /></td>
                     <td className="text-[12.5px]">
                       {l.expires_at ? formatDate(l.expires_at) : <span className="text-[var(--brand)]">Lifetime</span>}

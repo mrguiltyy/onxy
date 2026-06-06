@@ -1,7 +1,7 @@
 'use client'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, KeyRound, Plus, Wallet, User, ChevronDown, MessageSquare, Shield, Boxes, BookOpen, Store } from 'lucide-react'
+import { LayoutDashboard, KeyRound, Plus, Wallet, User, ChevronDown, MessageSquare, Shield, Boxes, BookOpen, Store, LifeBuoy } from 'lucide-react'
 import { cn, formatPrice } from '@/lib/utils'
 import { BrandRow } from './Brand'
 
@@ -17,7 +17,8 @@ const baseTabs = [
   { href: '/dashboard/licenses',  icon: KeyRound,        label: 'Licenses'  },
   { href: '/dashboard/generate',  icon: Plus,            label: 'Generate'  },
   { href: '/dashboard/balance',   icon: Wallet,          label: 'Top-up'    },
-  { href: '/dashboard/tickets',   icon: MessageSquare,   label: 'Support'   },
+  { href: '/dashboard/troubleshoot', icon: LifeBuoy,     label: 'Help'      },
+  { href: '/dashboard/tickets',   icon: MessageSquare,   label: 'Tickets'   },
   { href: '/dashboard/account',   icon: User,            label: 'Account'   },
 ]
 
