@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Brand } from '@/components/Brand'
 import { DiscordButton } from '@/components/DiscordButton'
+import { Turnstile, isTurnstileConfigured } from '@/components/Turnstile'
 import { supabaseBrowser } from '@/lib/supabase/client'
 
 export default function LoginPage() {
@@ -25,11 +26,25 @@ function Form() {
   const [password, setPassword] = useState('')
   const [loading,  setLoading]  = useState(false)
   const [error,    setError]    = useState<string | null>(null)
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null)
+  const captchaRequired = isTurnstileConfigured()
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true); setError(null)
     try {
+      // Turnstile verification (if configured)
+      if (captchaRequired) {
+        if (!captchaToken) {
+          setError('Please complete the verification.'); setLoading(false); return
+        }
+        const verifyRes = await fetch('/api/turnstile/verify', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token: captchaToken }),
+        })
+        const v = await verifyRes.json()
+        if (!v.ok) { setError('Verification failed.'); setLoading(false); return }
+      }
       const supabase = supabaseBrowser()
       const { error: authError } = await supabase.auth.signInWithPassword({ email, password })
       if (authError) {
@@ -103,7 +118,15 @@ function Form() {
               minLength={6}
             />
 
-            <Button type="submit" variant="primary" loading={loading} className="mt-2 w-full !py-3" icon={loading ? undefined : <ArrowRight size={15} />}>
+            {captchaRequired && (
+              <div className="flex justify-center">
+                <Turnstile onToken={setCaptchaToken} />
+              </div>
+            )}
+
+            <Button type="submit" variant="primary" loading={loading}
+              disabled={captchaRequired && !captchaToken}
+              className="mt-2 w-full !py-3" icon={loading ? undefined : <ArrowRight size={15} />}>
               {loading ? 'Signing in...' : 'Sign in'}
             </Button>
           </form>

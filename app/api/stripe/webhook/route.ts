@@ -4,6 +4,9 @@ import { stripe, STRIPE_WEBHOOK_SECRET } from '@/lib/stripe'
 import { supabaseAdmin } from '@/lib/supabase/server'
 import { notifyNewSale } from '@/lib/discord-webhook'
 import { emailWalletTopup } from '@/lib/email'
+import { generateLicenseKey } from '@/lib/auth-engine'
+
+interface PurchaseProfile { username: string; email: string; total_spent_cents: number }
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -106,6 +109,57 @@ export async function POST(req: Request) {
             total_user_spent: (fullProf.total_spent_cents ?? 0) + cents,
           })
         }
+      }
+
+      if (kind === 'product_purchase') {
+        const productId   = session.metadata?.product_id
+        const productName = session.metadata?.product_name ?? 'product'
+        const tier        = session.metadata?.tier ?? 'lifetime'
+        if (!productId) break
+
+        const durationDays = tier === 'day' ? 1 : tier === 'week' ? 7 : tier === 'month' ? 30 : null   // null = lifetime
+        const now = new Date()
+        const expiresAt = durationDays ? new Date(now.getTime() + durationDays * 86_400_000).toISOString() : null
+
+        // Generate the key
+        const keyFull = generateLicenseKey()
+        const keyPrefix = keyFull.split('-').slice(0, 2).join('-')
+
+        await admin.from('licenses').insert({
+          user_id:        userId,
+          product:        productName,
+          product_id:     productId,
+          key_full:       keyFull,
+          key_prefix:     keyPrefix,
+          status:         'active',
+          duration_days:  durationDays,
+          expires_at:     expiresAt,
+        } as never)
+
+        // Email + Discord + notification
+        const { data: fullProfRaw2 } = await admin
+          .from('profiles').select('username, email, total_spent_cents').eq('id', userId).maybeSingle()
+        const fullProf2 = fullProfRaw2 as PurchaseProfile | null
+        if (fullProf2) {
+          await admin.from('profiles')
+            .update({ total_spent_cents: (fullProf2.total_spent_cents ?? 0) + cents } as never)
+            .eq('id', userId)
+          await notifyNewSale({
+            user_username:    fullProf2.username,
+            user_email:       fullProf2.email,
+            amount_cents:     cents,
+            description:      `Purchased ${productName} (${tier})`,
+            total_user_spent: (fullProf2.total_spent_cents ?? 0) + cents,
+          })
+        }
+
+        await admin.from('notifications').insert({
+          user_id:  userId,
+          type:     'purchase_complete',
+          title:    `${productName} — ${tier} key delivered`,
+          body:     `Your new license is in /dashboard/licenses. Key starts with ${keyPrefix}.`,
+          link_url: '/dashboard/licenses',
+        } as never)
       }
 
       break

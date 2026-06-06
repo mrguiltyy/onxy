@@ -1,7 +1,7 @@
 'use client'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, MessageSquare, Megaphone, Users, Boxes, Handshake } from 'lucide-react'
+import { LayoutDashboard, MessageSquare, Megaphone, Users, Boxes, Handshake, FileText } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 const items = [
@@ -9,6 +9,7 @@ const items = [
   { href: '/admin/products',       icon: Boxes,           label: 'Products' },
   { href: '/admin/resellers',      icon: Handshake,       label: 'Resellers' },
   { href: '/admin/tickets',        icon: MessageSquare,   label: 'Tickets'  },
+  { href: '/admin/pages',          icon: FileText,        label: 'Pages / Blog' },
   { href: '/admin/announcements',  icon: Megaphone,       label: 'Announcements' },
   { href: '/admin/users',          icon: Users,           label: 'Users'    },
 ]

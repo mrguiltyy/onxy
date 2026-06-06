@@ -5,6 +5,7 @@ import { PublicShell } from '@/components/PublicShell'
 import { supabaseAdmin, supabaseServer } from '@/lib/supabase/server'
 import { formatPrice } from '@/lib/utils'
 import { ResellApplicationButton } from './ResellApplicationButton'
+import { BuyButton } from './BuyButton'
 
 export const dynamic = 'force-dynamic'
 
@@ -28,6 +29,8 @@ interface Product {
   reseller_open:            boolean
   lifetime_support:         boolean
   features:                 string[]
+  cta_label:                string | null
+  cta_color:                string | null
 }
 
 interface Update {
@@ -196,12 +199,20 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
               <PriceRow label="1 month"    cents={product.price_month}    icon={<Calendar size={11} />} />
               <PriceRow label="Lifetime"   cents={product.price_lifetime} icon={<Infinity size={11} />} highlight />
             </div>
-            <Link href={user ? '/dashboard/generate' : '/register'} className="btn btn-primary w-full mt-4">
-              {user ? 'Generate key' : 'Sign up to buy'} <ArrowRight size={13} />
-            </Link>
-            <p className="text-[10.5px] text-[var(--fg-mute)] text-center mt-3">
-              Secure payment via Stripe · instant key delivery
-            </p>
+            <div className="mt-4">
+              <BuyButton
+                productId={product.id}
+                signedIn={!!user}
+                prices={{
+                  day:      product.price_day,
+                  week:     product.price_week,
+                  month:    product.price_month,
+                  lifetime: product.price_lifetime,
+                }}
+                ctaLabel={product.cta_label}
+                ctaColor={product.cta_color}
+              />
+            </div>
           </div>
 
           {/* Reseller card */}

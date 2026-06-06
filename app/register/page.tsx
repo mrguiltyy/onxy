@@ -7,6 +7,8 @@ import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Brand } from '@/components/Brand'
 import { DiscordButton } from '@/components/DiscordButton'
+import { HCaptcha, isCaptchaConfigured } from '@/components/HCaptcha'
+import { Turnstile, isTurnstileConfigured } from '@/components/Turnstile'
 import { supabaseBrowser } from '@/lib/supabase/client'
 
 export default function RegisterPage() {
@@ -26,11 +28,32 @@ function Form() {
   const [loading,  setLoading]  = useState(false)
   const [error,    setError]    = useState<string | null>(null)
   const [done,     setDone]     = useState(false)
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null)
+  // Prefer Cloudflare Turnstile (cheaper, less friction) over hCaptcha.
+  // If both are configured, Turnstile wins.
+  const useTurnstile = isTurnstileConfigured()
+  const useHCaptcha  = !useTurnstile && isCaptchaConfigured()
+  const captchaRequired = useTurnstile || useHCaptcha
+  const verifyUrl = useTurnstile ? '/api/turnstile/verify' : '/api/captcha/verify'
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true); setError(null)
     try {
+      // Verify captcha first
+      if (captchaRequired) {
+        if (!captchaToken) {
+          setError('Please complete the verification first.'); setLoading(false); return
+        }
+        const verifyRes = await fetch(verifyUrl, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token: captchaToken }),
+        })
+        const v = await verifyRes.json()
+        if (!v.ok) {
+          setError('Verification failed. Try again.'); setLoading(false); return
+        }
+      }
       const supabase = supabaseBrowser()
       // Use the public app URL when available (matches Supabase Site URL),
       // fall back to whatever the browser is hosted at.
@@ -142,7 +165,20 @@ function Form() {
                   autoComplete="new-password"
                 />
 
-                <Button type="submit" variant="primary" loading={loading} className="mt-2 w-full !py-3" icon={loading ? undefined : <ArrowRight size={15} />}>
+                {useTurnstile && (
+                  <div className="flex justify-center">
+                    <Turnstile onToken={setCaptchaToken} />
+                  </div>
+                )}
+                {useHCaptcha && (
+                  <div className="flex justify-center">
+                    <HCaptcha onToken={setCaptchaToken} />
+                  </div>
+                )}
+
+                <Button type="submit" variant="primary" loading={loading}
+                  disabled={captchaRequired && !captchaToken}
+                  className="mt-2 w-full !py-3" icon={loading ? undefined : <ArrowRight size={15} />}>
                   {loading ? 'Creating...' : 'Create account'}
                 </Button>
               </form>

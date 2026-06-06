@@ -23,6 +23,95 @@ function parsePriceCents(value: FormDataEntryValue | null): number | null {
   return Math.round(dollars * 100)
 }
 
+function parseInt0(value: FormDataEntryValue | null): number {
+  if (!value) return 0
+  const n = parseInt(String(value), 10)
+  return Number.isFinite(n) ? n : 0
+}
+
+function parseIntOrNull(value: FormDataEntryValue | null): number | null {
+  if (!value) return null
+  const n = parseInt(String(value), 10)
+  return Number.isFinite(n) ? n : null
+}
+
+function parseLines(value: FormDataEntryValue | null): string[] {
+  if (!value) return []
+  return String(value).split('\n').map(s => s.trim()).filter(Boolean)
+}
+
+function parseCommaList(value: FormDataEntryValue | null): string[] {
+  if (!value) return []
+  return String(value).split(',').map(s => s.trim()).filter(Boolean)
+}
+
+function buildProductPayload(formData: FormData) {
+  const name = String(formData.get('name') ?? '').trim()
+  return {
+    valid:        !!name,
+    payload: {
+      name,
+      subtitle:        String(formData.get('subtitle')          ?? '').trim() || null,
+      tagline:         String(formData.get('tagline')           ?? '').trim() || null,
+      description:     String(formData.get('description')       ?? '').trim() || null,
+      long_description: String(formData.get('long_description') ?? '').trim() || null,
+      image_url:       String(formData.get('image_url')         ?? '').trim() || null,
+      gallery_urls:    parseLines(formData.get('gallery_urls')),
+      youtube_url:     String(formData.get('youtube_url')       ?? '').trim() || null,
+      demo_url:        String(formData.get('demo_url')          ?? '').trim() || null,
+      download_url:    String(formData.get('download_url')      ?? '').trim() || null,
+      category:        String(formData.get('category')          ?? 'tool').trim() || 'tool',
+      product_type:    String(formData.get('product_type')      ?? 'tool').trim() || 'tool',
+      delivery_method: String(formData.get('delivery_method')   ?? 'instant_key').trim() || 'instant_key',
+      version:         String(formData.get('version')           ?? '1.0.0').trim() || '1.0.0',
+
+      features:        parseLines(formData.get('features')),
+      requirements:    String(formData.get('requirements')      ?? '').trim() || null,
+      faq:             String(formData.get('faq')               ?? '').trim() || null,
+
+      cta_label:       String(formData.get('cta_label')         ?? '').trim() || null,
+      cta_color:       String(formData.get('cta_color')         ?? '').trim() || null,
+      accent_color:    String(formData.get('accent_color')      ?? '').trim() || null,
+      badges:          parseLines(formData.get('badges')),
+      social_proof:    String(formData.get('social_proof')      ?? '').trim() || null,
+
+      featured:                formData.get('featured') === 'on',
+      lifetime_support:        formData.get('lifetime_support') === 'on',
+      requires_review:         formData.get('requires_review')  === 'on',
+
+      // pricing — customer
+      price_day:      parsePriceCents(formData.get('price_day')),
+      price_week:     parsePriceCents(formData.get('price_week')),
+      price_month:    parsePriceCents(formData.get('price_month')),
+      price_lifetime: parsePriceCents(formData.get('price_lifetime')),
+
+      // pricing — reseller (wholesale)
+      reseller_price_day:      parsePriceCents(formData.get('reseller_price_day')),
+      reseller_price_week:     parsePriceCents(formData.get('reseller_price_week')),
+      reseller_price_month:    parsePriceCents(formData.get('reseller_price_month')),
+      reseller_price_lifetime: parsePriceCents(formData.get('reseller_price_lifetime')),
+
+      // sale display
+      original_price_month:    parsePriceCents(formData.get('original_price_month')),
+      original_price_lifetime: parsePriceCents(formData.get('original_price_lifetime')),
+      discount_pct:            Math.max(0, Math.min(100, parseInt0(formData.get('discount_pct')))),
+
+      reseller_open:         formData.get('reseller_open') === 'on',
+      reseller_auto_approve: formData.get('reseller_auto_approve') === 'on',
+
+      stock_limited:    formData.get('stock_limited') === 'on',
+      stock_remaining:  parseIntOrNull(formData.get('stock_remaining')),
+
+      support_tier:        String(formData.get('support_tier')        ?? 'standard').trim() || 'standard',
+      subscription_period: String(formData.get('subscription_period') ?? '').trim() || null,
+
+      meta_title:       String(formData.get('meta_title')       ?? '').trim() || null,
+      meta_description: String(formData.get('meta_description') ?? '').trim() || null,
+      meta_keywords:    parseCommaList(formData.get('meta_keywords')),
+    },
+  }
+}
+
 async function gateAdmin() {
   const supa = await supabaseServer()
   const { data: { user } } = await supa.auth.getUser()
@@ -37,37 +126,14 @@ export async function createProduct(formData: FormData): Promise<{ ok: boolean; 
   const gate = await gateAdmin()
   if (!gate.ok) return { ok: false, error: gate.error }
 
-  const name        = String(formData.get('name') ?? '').trim()
-  const tagline     = String(formData.get('tagline') ?? '').trim() || null
-  const description = String(formData.get('description') ?? '').trim() || null
-  const imageUrl    = String(formData.get('image_url') ?? '').trim() || null
-  const category    = String(formData.get('category') ?? 'tool').trim() || 'tool'
-  const version     = String(formData.get('version') ?? '1.0.0').trim() || '1.0.0'
-  const featured    = formData.get('featured') === 'on'
-  const featuresRaw = String(formData.get('features') ?? '').trim()
-  const features    = featuresRaw ? featuresRaw.split('\n').map(s => s.trim()).filter(Boolean) : []
-
-  if (!name) return { ok: false, error: 'Name required.' }
-  const slug = slugify(name)
+  const { valid, payload } = buildProductPayload(formData)
+  if (!valid) return { ok: false, error: 'Name required.' }
+  const slug = slugify(payload.name)
   if (!slug) return { ok: false, error: 'Could not derive a URL slug from name.' }
 
   const admin = supabaseAdmin()
   const { data: insRaw, error } = await admin.from('products')
-    .insert({
-      slug, name, tagline, description, image_url: imageUrl, category, version,
-      featured, features,
-      price_day:      parsePriceCents(formData.get('price_day')),
-      price_week:     parsePriceCents(formData.get('price_week')),
-      price_month:    parsePriceCents(formData.get('price_month')),
-      price_lifetime: parsePriceCents(formData.get('price_lifetime')),
-      reseller_price_day:      parsePriceCents(formData.get('reseller_price_day')),
-      reseller_price_week:     parsePriceCents(formData.get('reseller_price_week')),
-      reseller_price_month:    parsePriceCents(formData.get('reseller_price_month')),
-      reseller_price_lifetime: parsePriceCents(formData.get('reseller_price_lifetime')),
-      reseller_open: formData.get('reseller_open') === 'on',
-      reseller_auto_approve: formData.get('reseller_auto_approve') === 'on',
-      lifetime_support: formData.get('lifetime_support') === 'on',
-    } as never)
+    .insert({ slug, ...payload } as never)
     .select('id')
     .single()
 
@@ -85,37 +151,14 @@ export async function updateProduct(productId: string, formData: FormData): Prom
   const gate = await gateAdmin()
   if (!gate.ok) return { ok: false, error: gate.error }
 
-  const name        = String(formData.get('name') ?? '').trim()
-  if (!name) return { ok: false, error: 'Name required.' }
+  const { valid, payload } = buildProductPayload(formData)
+  if (!valid) return { ok: false, error: 'Name required.' }
 
-  const tagline     = String(formData.get('tagline') ?? '').trim() || null
-  const description = String(formData.get('description') ?? '').trim() || null
-  const imageUrl    = String(formData.get('image_url') ?? '').trim() || null
-  const category    = String(formData.get('category') ?? 'tool').trim() || 'tool'
-  const version     = String(formData.get('version') ?? '1.0.0').trim() || '1.0.0'
-  const status      = String(formData.get('status') ?? 'active').trim() || 'active'
-  const featured    = formData.get('featured') === 'on'
-  const featuresRaw = String(formData.get('features') ?? '').trim()
-  const features    = featuresRaw ? featuresRaw.split('\n').map(s => s.trim()).filter(Boolean) : []
+  const status = String(formData.get('status') ?? 'active').trim() || 'active'
 
   const admin = supabaseAdmin()
   const { error } = await admin.from('products')
-    .update({
-      name, tagline, description, image_url: imageUrl, category, version, status,
-      featured, features,
-      price_day:      parsePriceCents(formData.get('price_day')),
-      price_week:     parsePriceCents(formData.get('price_week')),
-      price_month:    parsePriceCents(formData.get('price_month')),
-      price_lifetime: parsePriceCents(formData.get('price_lifetime')),
-      reseller_price_day:      parsePriceCents(formData.get('reseller_price_day')),
-      reseller_price_week:     parsePriceCents(formData.get('reseller_price_week')),
-      reseller_price_month:    parsePriceCents(formData.get('reseller_price_month')),
-      reseller_price_lifetime: parsePriceCents(formData.get('reseller_price_lifetime')),
-      reseller_open: formData.get('reseller_open') === 'on',
-      reseller_auto_approve: formData.get('reseller_auto_approve') === 'on',
-      lifetime_support: formData.get('lifetime_support') === 'on',
-      updated_at: new Date().toISOString(),
-    } as never)
+    .update({ ...payload, status, updated_at: new Date().toISOString() } as never)
     .eq('id', productId)
 
   if (error) return { ok: false, error: error.message }
