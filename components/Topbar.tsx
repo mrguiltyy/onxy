@@ -4,12 +4,20 @@ import { usePathname } from 'next/navigation'
 import { LayoutDashboard, KeyRound, Plus, Wallet, User, ChevronDown, MessageSquare, Shield, Boxes, BookOpen, Store, LifeBuoy } from 'lucide-react'
 import { cn, formatPrice } from '@/lib/utils'
 import { BrandRow } from './Brand'
+import { NotificationBell } from './NotificationBell'
+
+interface Notif {
+  id: string; type: string; title: string; body: string | null
+  link_url: string | null; is_read: boolean; created_at: string
+}
 
 interface TopbarProps {
   username: string
   balanceCents: number
   isAdmin?: boolean
   canManageApps?: boolean
+  notifications?: Notif[]
+  unreadCount?:   number
 }
 
 const baseTabs = [
@@ -28,7 +36,7 @@ const resellerTabs = [
   { href: '/dashboard/docs',         icon: BookOpen, label: 'Docs'         },
 ]
 
-export function Topbar({ username, balanceCents, isAdmin, canManageApps }: TopbarProps) {
+export function Topbar({ username, balanceCents, isAdmin, canManageApps, notifications = [], unreadCount = 0 }: TopbarProps) {
   const pathname = usePathname()
   const tabs = canManageApps
     ? [...baseTabs.slice(0, 4), ...resellerTabs, ...baseTabs.slice(4)]
@@ -75,6 +83,7 @@ export function Topbar({ username, balanceCents, isAdmin, canManageApps }: Topba
 
           {/* Balance + user chip */}
           <div className="flex items-center gap-3 shrink-0">
+            <NotificationBell initial={notifications} unreadCount={unreadCount} />
             {isAdmin && (
               <Link
                 href="/admin"

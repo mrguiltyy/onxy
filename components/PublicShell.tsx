@@ -16,6 +16,7 @@ export function PublicShell({ children, wide = false }: { children: React.ReactN
           <BrandRow />
           <nav className="flex items-center gap-5">
             <Link href="/products" className="text-[13.5px] text-[var(--fg-dim)] hover:text-[var(--fg)] transition-colors">Products</Link>
+            <Link href="/reseller" className="text-[13.5px] text-[var(--fg-dim)] hover:text-[var(--fg)] transition-colors">Reseller</Link>
             <Link href="/status"   className="text-[13.5px] text-[var(--fg-dim)] hover:text-[var(--fg)] transition-colors">Status</Link>
             <Link href="/faq"      className="text-[13.5px] text-[var(--fg-dim)] hover:text-[var(--fg)] transition-colors">FAQ</Link>
             <Link href="/login"    className="btn btn-primary btn-sm">Sign in</Link>

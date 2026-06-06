@@ -30,6 +30,24 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   const profile = (profileRaw ?? null) as Profile | null
 
+  // Notifications — last 10 for the bell dropdown, plus unread count
+  const { data: notifsRaw } = await supabase
+    .from('notifications')
+    .select('id, type, title, body, link_url, is_read, created_at')
+    .eq('user_id', user.id)
+    .order('created_at', { ascending: false })
+    .limit(10)
+  const notifications = (notifsRaw ?? []) as Array<{
+    id: string; type: string; title: string; body: string | null
+    link_url: string | null; is_read: boolean; created_at: string
+  }>
+
+  const { count: unreadCount } = await supabase
+    .from('notifications')
+    .select('id', { count: 'exact', head: true })
+    .eq('user_id', user.id)
+    .eq('is_read', false)
+
   // Latest active announcement (anyone signed-in can read via RLS)
   const { data: annRaw } = await supabase
     .from('announcements')
@@ -52,6 +70,8 @@ export default async function DashboardLayout({ children }: { children: React.Re
         balanceCents={Number(profile?.balance_cents ?? 0)}
         isAdmin={isAdmin}
         canManageApps={canManageApps}
+        notifications={notifications}
+        unreadCount={unreadCount ?? 0}
       />
       {ann && (
         <AnnouncementBar
