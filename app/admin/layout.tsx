@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation'
 import { supabaseServer } from '@/lib/supabase/server'
 import { Topbar } from '@/components/Topbar'
 import { AdminSidebar } from './AdminSidebar'
+import { AntiInspect } from '@/components/AntiInspect'
 
 interface Profile {
   username:      string
@@ -27,6 +28,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 
   return (
     <div className="min-h-screen flex flex-col">
+      <AntiInspect />
       <Topbar
         username={profile.username}
         balanceCents={Number(profile.balance_cents)}

@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation'
 import { supabaseServer } from '@/lib/supabase/server'
 import { Topbar } from '@/components/Topbar'
 import { AnnouncementBar } from '@/components/AnnouncementBar'
+import { AntiInspect } from '@/components/AntiInspect'
 
 interface Profile {
   username:      string
@@ -44,6 +45,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   return (
     <div className="min-h-screen flex flex-col">
+      <AntiInspect />
       <Topbar
         username={profile?.username ?? user.email?.split('@')[0] ?? 'User'}
         balanceCents={Number(profile?.balance_cents ?? 0)}
