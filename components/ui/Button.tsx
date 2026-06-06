@@ -3,7 +3,7 @@ import { forwardRef } from 'react'
 import { Loader2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
-type Variant = 'primary' | 'outline' | 'ghost' | 'danger' | 'secondary'
+type Variant = 'primary' | 'outline' | 'ghost' | 'danger' | 'icon'
 type Size    = 'sm' | 'md' | 'lg'
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
@@ -11,23 +11,18 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   size?:     Size
   loading?:  boolean
   icon?:     React.ReactNode
-  iconRight?: React.ReactNode
 }
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ variant = 'primary', size = 'md', loading, icon, iconRight, children, className, disabled, ...props }, ref) => {
+  ({ variant = 'primary', size = 'md', loading, icon, children, className, disabled, ...props }, ref) => {
     const v: Record<Variant, string> = {
-      primary:   'btn btn-primary',
-      outline:   'btn btn-outline',
-      ghost:     'btn btn-ghost',
-      danger:    'btn btn-danger',
-      secondary: 'btn bg-white/5 border border-white/10 text-white hover:bg-white/10',
+      primary: 'btn btn-primary',
+      outline: 'btn btn-outline',
+      ghost:   'btn btn-ghost',
+      danger:  'btn btn-danger',
+      icon:    'btn btn-icon',
     }
-    const s: Record<Size, string> = {
-      sm: 'btn-sm',
-      md: '',
-      lg: 'btn-primary-lg',
-    }
+    const s: Record<Size, string> = { sm: 'btn-sm', md: '', lg: 'btn-lg' }
 
     return (
       <button
@@ -36,9 +31,8 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         disabled={disabled || loading}
         {...props}
       >
-        {loading ? <Loader2 size={15} className="animate-spin" /> : icon}
+        {loading ? <Loader2 size={14} className="animate-spin" /> : icon}
         {children}
-        {!loading && iconRight}
       </button>
     )
   }

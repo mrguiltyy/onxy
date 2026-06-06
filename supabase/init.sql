@@ -1,471 +1,109 @@
 -- ════════════════════════════════════════════════════════════════
---  Onyx Services — One-shot Supabase setup
---
---  Paste this entire file into the Supabase SQL editor and run.
---  Safe to re-run.
---
---  After running:
---    1. Go to Settings → API → copy 3 keys
---    2. Paste them into Vercel env vars
---    3. Redeploy
--- ════════════════════════════════════════════════════════════════
-
--- ════════════════════════════════════════════════════════════════
--- Onyx Services — Supabase Schema
---
--- Run this in: Supabase Dashboard → SQL Editor → New query
--- Or via CLI:  supabase db push
+--  Onyx Services — v1 minimal schema
+--  Paste into Supabase SQL editor. Safe to re-run.
 -- ════════════════════════════════════════════════════════════════
 
 -- ── Extensions ──────────────────────────────────────────────────
-create extension if not exists "uuid-ossp";
 create extension if not exists "pgcrypto";
 
--- ── Enums ───────────────────────────────────────────────────────
-create type user_role        as enum ('user', 'reseller', 'support', 'super_admin');
-create type tier_t           as enum ('Onyx', 'Slate', 'Carbon', 'Diamond', 'Gold');
-create type license_status   as enum ('active', 'expired', 'revoked');
-create type rkey_status      as enum ('unused', 'sold', 'revoked');
-create type tx_type          as enum ('deposit', 'purchase', 'refund', 'referral', 'reseller_purchase', 'reseller_sale', 'adjustment');
-create type ticket_status    as enum ('open', 'in_progress', 'waiting_on_user', 'closed');
-create type product_type     as enum ('software', 'file', 'bundle');
-
--- ── Users (extends auth.users) ──────────────────────────────────
-create table public.users (
-  id                  uuid primary key references auth.users(id) on delete cascade,
-  username            text unique not null,
-  email               text unique not null,
-  avatar_url          text,
-  discord_id          text,
-  wallet_balance_cents bigint not null default 0,
-  role                user_role not null default 'user',
-  tier                tier_t not null default 'Onyx',
-  totp_secret         text,
-  totp_enabled        boolean not null default false,
-  email_verified      boolean not null default false,
-  banned_at           timestamptz,
-  ban_reason          text,
-  referral_code       text unique not null,
-  referred_by_id      uuid references public.users(id),
-
-  -- Reseller-specific fields
-  reseller_approved_at      timestamptz,
-  reseller_discount_percent int not null default 75,
-  reseller_keys_generated   int not null default 0,
-  reseller_keys_sold        int not null default 0,
-  reseller_revenue_cents    bigint not null default 0,
-
-  created_at          timestamptz not null default now(),
-  updated_at          timestamptz not null default now()
-);
-
-create index idx_users_role on public.users(role);
-create index idx_users_referral_code on public.users(referral_code);
-
--- ── Products ────────────────────────────────────────────────────
-create table public.products (
-  id                  uuid primary key default uuid_generate_v4(),
-  slug                text unique not null,
-  name                text not null,
-  short_desc          text,
-  long_desc           text,
-  type                product_type not null default 'software',
-  category            text,
-  thumbnail_url       text,
-  base_price_cents    int not null,
-  stock               int,
-  max_hwid_slots      int not null default 2,
-  current_version     text,
-  current_file_key    text,
-  current_sha256      text,
-  force_update        boolean not null default false,
-  is_active           boolean not null default true,
-  is_featured         boolean not null default false,
-  created_at          timestamptz not null default now()
-);
-
--- Plans per product
-create table public.product_plans (
-  id                  uuid primary key default uuid_generate_v4(),
-  product_id          uuid not null references public.products(id) on delete cascade,
-  plan_id             text not null,                -- 'monthly' / 'quarterly' / 'lifetime'
-  label               text not null,
-  price_cents         int not null,
-  duration_days       int,                          -- null = lifetime
-  hwid_slots          int not null default 2,
-  sort_order          int not null default 0,
-  unique (product_id, plan_id)
+-- ── Profiles (extends auth.users) ───────────────────────────────
+create table if not exists public.profiles (
+  id              uuid primary key references auth.users(id) on delete cascade,
+  username        text unique not null,
+  email           text unique not null,
+  balance_cents   bigint not null default 0,
+  role            text not null default 'user',           -- 'user' / 'support' / 'super_admin'
+  parent_id       text not null default '#1',
+  created_at      timestamptz not null default now()
 );
 
 -- ── Licenses ────────────────────────────────────────────────────
--- NOTE: We never store the plaintext key. The user sees it once on issuance.
--- key_lookup_hash = sha256(key) — used as the unique index for auth lookups.
--- This way, even a DB dump doesn't compromise active licenses.
-
-create table public.licenses (
-  id                  uuid primary key default uuid_generate_v4(),
-  user_id             uuid not null references public.users(id) on delete cascade,
-  product_id          uuid not null references public.products(id),
-  plan_id             uuid references public.product_plans(id),
-  key_lookup_hash     text unique not null,
-  key_prefix          text not null,
-  status              license_status not null default 'active',
-  auto_renew          boolean not null default false,
-  hwid_slots_used     int not null default 0,
-  hwid_slots_total    int not null default 2,
-  expires_at          timestamptz,
-  banned_at           timestamptz,
-  banned_reason       text,
-
-  -- Pause feature: 1 pause allowed per license. paused_at != null = currently paused.
-  paused_at           timestamptz,
-  pause_used          boolean not null default false,
-  pause_days_remaining int,                                -- snapshot of remaining days when paused
-
-  created_at          timestamptz not null default now()
+create table if not exists public.licenses (
+  id              uuid primary key default gen_random_uuid(),
+  user_id         uuid not null references public.profiles(id) on delete cascade,
+  product         text not null,
+  key_full        text not null,                          -- full key (visible to issuer)
+  key_prefix      text not null,                          -- first segment for table display
+  status          text not null default 'pending',        -- 'active' / 'expired' / 'banned' / 'pending'
+  duration_days   int,                                    -- null = lifetime
+  expires_at      timestamptz,
+  hwid            text,
+  ip              text,
+  last_seen       timestamptz,
+  created_at      timestamptz not null default now()
 );
 
-create index idx_licenses_user      on public.licenses(user_id);
-create index idx_licenses_key_hash  on public.licenses(key_lookup_hash);
-
--- ── License auth attempts (brute force protection log) ──────────
-create table public.license_auth_attempts (
-  id                  bigserial primary key,
-  ip                  inet not null,
-  key_lookup_hash     text,
-  user_agent          text,
-  outcome             text not null,                    -- 'success' / 'invalid_key' / 'hwid_limit' / 'rate_limited' / etc
-  created_at          timestamptz not null default now()
-);
-
-create index idx_attempts_ip_recent  on public.license_auth_attempts(ip,              created_at desc);
-create index idx_attempts_key_recent on public.license_auth_attempts(key_lookup_hash, created_at desc);
-
--- HWID registry per license
-create table public.hwid_registry (
-  id                  uuid primary key default uuid_generate_v4(),
-  license_id          uuid not null references public.licenses(id) on delete cascade,
-  hwid_hash           text not null,
-  label               text,
-  registered_at       timestamptz not null default now(),
-  last_seen_at        timestamptz,
-  last_ip             inet,
-  is_active           boolean not null default true,
-  unique (license_id, hwid_hash)
-);
-
--- Active sessions (for live monitoring + heartbeat tracking)
-create table public.license_sessions (
-  id                  uuid primary key default uuid_generate_v4(),
-  license_id          uuid not null references public.licenses(id) on delete cascade,
-  hwid_id             uuid references public.hwid_registry(id),
-  session_token       text unique not null,
-  ip                  inet,
-  tool_version        text,
-  last_heartbeat_at   timestamptz not null default now(),
-  expires_at          timestamptz not null,
-  created_at          timestamptz not null default now()
-);
-
-create index idx_sessions_token on public.license_sessions(session_token);
-create index idx_sessions_license on public.license_sessions(license_id);
-
--- ── Reseller keys ───────────────────────────────────────────────
-create table public.reseller_keys (
-  id                  uuid primary key default uuid_generate_v4(),
-  reseller_id         uuid not null references public.users(id),
-  product_id          uuid not null references public.products(id),
-  plan_id             uuid references public.product_plans(id),
-  key                 text unique not null,
-  cost_paid_cents     int not null,
-  retail_price_cents  int not null,
-  status              rkey_status not null default 'unused',
-  sold_at             timestamptz,
-  sold_price_cents    int,
-  buyer_email         text,
-  redeemed_by_user_id uuid references public.users(id),
-  created_at          timestamptz not null default now()
-);
-
-create index idx_reseller_keys_reseller on public.reseller_keys(reseller_id);
-create index idx_reseller_keys_status on public.reseller_keys(status);
-
--- ── Subscriptions ───────────────────────────────────────────────
-create table public.subscriptions (
-  id                  uuid primary key default uuid_generate_v4(),
-  user_id             uuid not null references public.users(id) on delete cascade,
-  license_id          uuid not null references public.licenses(id),
-  product_id          uuid not null references public.products(id),
-  plan_id             uuid references public.product_plans(id),
-  amount_cents        int not null,
-  interval_days       int not null,
-  status              text not null default 'active',  -- active / cancelled / past_due
-  auto_renew          boolean not null default true,
-  next_billing_at     timestamptz not null,
-  payment_method      text,                            -- 'wallet' / 'card_visa' / etc
-  stripe_subscription_id text,
-  created_at          timestamptz not null default now(),
-  cancelled_at        timestamptz
-);
-
--- ── Orders ──────────────────────────────────────────────────────
-create table public.orders (
-  id                  uuid primary key default uuid_generate_v4(),
-  user_id             uuid not null references public.users(id),
-  product_id          uuid references public.products(id),
-  plan_id             uuid references public.product_plans(id),
-  license_id          uuid references public.licenses(id),
-  amount_cents        int not null,
-  discount_cents      int not null default 0,
-  coupon_id           uuid,
-  payment_method      text not null,                   -- 'wallet' / 'stripe' / 'crypto'
-  stripe_session_id   text,
-  status              text not null default 'completed',
-  created_at          timestamptz not null default now()
-);
+create index if not exists idx_licenses_user on public.licenses(user_id, created_at desc);
 
 -- ── Wallet transactions ─────────────────────────────────────────
-create table public.wallet_transactions (
-  id                  uuid primary key default uuid_generate_v4(),
-  user_id             uuid not null references public.users(id) on delete cascade,
-  type                tx_type not null,
-  amount_cents        bigint not null,
-  balance_after_cents bigint not null,
-  reference_id        uuid,                            -- order/license/reseller_key id
-  note                text,
-  created_at          timestamptz not null default now()
+create table if not exists public.transactions (
+  id              uuid primary key default gen_random_uuid(),
+  user_id         uuid not null references public.profiles(id) on delete cascade,
+  type            text not null,                          -- 'topup' / 'generate' / 'refund' / 'adjustment'
+  amount_cents    bigint not null,                        -- positive for credits, negative for debits
+  description     text,
+  created_at      timestamptz not null default now()
 );
 
-create index idx_tx_user on public.wallet_transactions(user_id, created_at desc);
+create index if not exists idx_transactions_user on public.transactions(user_id, created_at desc);
 
--- ── Downloads (signed URL tracking) ─────────────────────────────
-create table public.downloads (
-  id                  uuid primary key default uuid_generate_v4(),
-  user_id             uuid not null references public.users(id),
-  product_id          uuid not null references public.products(id),
-  token               text unique not null,
-  ip                  inet,
-  expires_at          timestamptz not null,
-  used_at             timestamptz,
-  created_at          timestamptz not null default now()
+-- ── Redeem codes (master-account top-up codes) ──────────────────
+create table if not exists public.redeem_codes (
+  id              uuid primary key default gen_random_uuid(),
+  code            text unique not null,
+  amount_cents    bigint not null,
+  used_by         uuid references public.profiles(id),
+  used_at         timestamptz,
+  created_at      timestamptz not null default now()
 );
 
--- ── Tickets ─────────────────────────────────────────────────────
-create table public.tickets (
-  id                  uuid primary key default uuid_generate_v4(),
-  user_id             uuid not null references public.users(id),
-  category            text not null,
-  priority            text not null default 'medium',
-  subject             text not null,
-  status              ticket_status not null default 'open',
-  created_at          timestamptz not null default now(),
-  closed_at           timestamptz
+-- ── Activity feed ───────────────────────────────────────────────
+create table if not exists public.activity (
+  id              uuid primary key default gen_random_uuid(),
+  user_id         uuid not null references public.profiles(id) on delete cascade,
+  event_type      text not null,                          -- 'generated' / 'banned' / 'redeemed'
+  target_label    text,
+  created_at      timestamptz not null default now()
 );
 
-create table public.ticket_messages (
-  id                  uuid primary key default uuid_generate_v4(),
-  ticket_id           uuid not null references public.tickets(id) on delete cascade,
-  author_id           uuid not null references public.users(id),
-  is_admin            boolean not null default false,
-  is_internal_note    boolean not null default false,
-  body                text not null,
-  created_at          timestamptz not null default now()
-);
-
--- ── Referrals ───────────────────────────────────────────────────
-create table public.referrals (
-  id                  uuid primary key default uuid_generate_v4(),
-  referrer_id         uuid not null references public.users(id),
-  referred_id         uuid not null references public.users(id),
-  reward_cents        int not null,
-  status              text not null default 'pending', -- pending / paid
-  paid_at             timestamptz,
-  created_at          timestamptz not null default now()
-);
-
--- ── IP / activity logs ──────────────────────────────────────────
-create table public.ip_logs (
-  id                  uuid primary key default uuid_generate_v4(),
-  user_id             uuid references public.users(id),
-  ip                  inet not null,
-  country             text,
-  city                text,
-  is_vpn              boolean default false,
-  is_proxy            boolean default false,
-  event_type          text not null,                   -- 'login' / 'tool_auth' / 'download' / etc
-  user_agent          text,
-  created_at          timestamptz not null default now()
-);
-
-create index idx_ip_logs_user on public.ip_logs(user_id, created_at desc);
-
--- ── Flags / security review ─────────────────────────────────────
-create table public.flags (
-  id                  uuid primary key default uuid_generate_v4(),
-  user_id             uuid not null references public.users(id),
-  reason              text not null,
-  severity            text not null,                   -- low / medium / high / critical
-  source              text not null default 'auto',    -- auto / manual
-  resolved_at         timestamptz,
-  resolved_by         uuid references public.users(id),
-  note                text,
-  created_at          timestamptz not null default now()
-);
-
--- ── Redeem codes ────────────────────────────────────────────────
-create table public.redeem_codes (
-  id                  uuid primary key default uuid_generate_v4(),
-  code                text unique not null,
-  reward_type         text not null,                   -- license / credit / discount
-  reward_payload      jsonb not null,                  -- {product_id, duration_days} or {amount} or {percent}
-  max_uses            int,
-  uses_count          int not null default 0,
-  uses_per_user       int not null default 1,
-  expires_at          timestamptz,
-  required_tier       tier_t,
-  product_id          uuid references public.products(id),
-  is_active           boolean not null default true,
-  created_at          timestamptz not null default now()
-);
-
-create table public.redeem_history (
-  id                  uuid primary key default uuid_generate_v4(),
-  code_id             uuid not null references public.redeem_codes(id),
-  user_id             uuid not null references public.users(id),
-  redeemed_at         timestamptz not null default now(),
-  unique (code_id, user_id)
-);
-
--- ── Ad spots + campaigns (rental marketplace) ──────────────────
-create type ad_status as enum ('scheduled', 'active', 'paused', 'ended');
-
-create table public.ad_spots (
-  id                  uuid primary key default uuid_generate_v4(),
-  slot_key            text unique not null,             -- 'hero-banner', 'shop-rail', 'footer-strip'
-  name                text not null,                    -- "Hero Banner — Homepage"
-  location_desc       text,                             -- "Above the fold on /"
-  width_px            int,
-  height_px           int,
-  base_price_cents    int not null default 0,           -- monthly base rent
-  is_active           boolean not null default true,
-  created_at          timestamptz not null default now()
-);
-
-create table public.ad_campaigns (
-  id                  uuid primary key default uuid_generate_v4(),
-  spot_id             uuid not null references public.ad_spots(id) on delete cascade,
-  advertiser_name     text not null,
-  advertiser_email    text,
-  image_url           text,
-  click_url           text not null,
-  alt_text            text,
-  starts_at           timestamptz not null default now(),
-  ends_at             timestamptz not null,
-  paid_cents          int not null default 0,
-  impressions_count   bigint not null default 0,
-  clicks_count        bigint not null default 0,
-  status              ad_status not null default 'scheduled',
-  notes               text,
-  created_at          timestamptz not null default now()
-);
-
-create index idx_campaigns_spot_active on public.ad_campaigns(spot_id, status, starts_at, ends_at);
-
-create table public.ad_events (
-  id                  bigserial primary key,
-  campaign_id         uuid not null references public.ad_campaigns(id) on delete cascade,
-  event_type          text not null,                    -- 'impression' / 'click'
-  ip                  inet,
-  user_agent          text,
-  referer             text,
-  created_at          timestamptz not null default now()
-);
-
-create index idx_ad_events_campaign on public.ad_events(campaign_id, event_type, created_at desc);
-
--- ── Audit log ───────────────────────────────────────────────────
-create table public.audit_logs (
-  id                  uuid primary key default uuid_generate_v4(),
-  admin_id            uuid not null references public.users(id),
-  action              text not null,                   -- BAN_USER / REVOKE_LICENSE / etc
-  target_type         text,
-  target_id           uuid,
-  payload             jsonb,
-  ip                  inet,
-  created_at          timestamptz not null default now()
-);
+create index if not exists idx_activity_user on public.activity(user_id, created_at desc);
 
 -- ════════════════════════════════════════════════════════════════
 -- ROW LEVEL SECURITY
 -- ════════════════════════════════════════════════════════════════
-alter table public.users               enable row level security;
-alter table public.licenses            enable row level security;
-alter table public.reseller_keys       enable row level security;
-alter table public.subscriptions       enable row level security;
-alter table public.orders              enable row level security;
-alter table public.wallet_transactions enable row level security;
-alter table public.tickets             enable row level security;
-alter table public.ticket_messages     enable row level security;
-alter table public.referrals           enable row level security;
-alter table public.redeem_history      enable row level security;
-alter table public.ip_logs             enable row level security;
-alter table public.hwid_registry       enable row level security;
-alter table public.license_sessions    enable row level security;
+alter table public.profiles     enable row level security;
+alter table public.licenses     enable row level security;
+alter table public.transactions enable row level security;
+alter table public.activity     enable row level security;
 
--- Users can read/update their own row
-create policy users_select_own on public.users  for select using (auth.uid() = id);
-create policy users_update_own on public.users  for update using (auth.uid() = id);
+drop policy if exists prof_select on public.profiles;
+drop policy if exists prof_update on public.profiles;
+drop policy if exists lic_select  on public.licenses;
+drop policy if exists tx_select   on public.transactions;
+drop policy if exists act_select  on public.activity;
 
--- Licenses / subs / orders / txns: owner-only
-create policy lic_select on public.licenses            for select using (auth.uid() = user_id);
-create policy sub_select on public.subscriptions       for select using (auth.uid() = user_id);
-create policy ord_select on public.orders              for select using (auth.uid() = user_id);
-create policy tx_select  on public.wallet_transactions for select using (auth.uid() = user_id);
-create policy tk_select  on public.tickets             for select using (auth.uid() = user_id);
-create policy ref_select on public.referrals           for select using (auth.uid() = referrer_id);
-create policy hw_select  on public.hwid_registry       for select using (
-  exists (select 1 from public.licenses l where l.id = license_id and l.user_id = auth.uid())
-);
-
--- Reseller keys: only the owning reseller can see them
-create policy rk_select on public.reseller_keys for select using (auth.uid() = reseller_id);
-create policy rk_insert on public.reseller_keys for insert with check (
-  auth.uid() = reseller_id
-  and exists (select 1 from public.users u where u.id = auth.uid() and u.role = 'reseller')
-);
-
--- Admins bypass — service role connection ignores RLS
+create policy prof_select on public.profiles     for select using (auth.uid() = id);
+create policy prof_update on public.profiles     for update using (auth.uid() = id);
+create policy lic_select  on public.licenses     for select using (auth.uid() = user_id);
+create policy tx_select   on public.transactions for select using (auth.uid() = user_id);
+create policy act_select  on public.activity     for select using (auth.uid() = user_id);
 
 -- ════════════════════════════════════════════════════════════════
--- AUTO PROFILE — every auth.user gets a public.users row on signup
+-- AUTO-PROFILE TRIGGER
 -- ════════════════════════════════════════════════════════════════
-
 create or replace function public.handle_new_user()
 returns trigger
 language plpgsql
 security definer set search_path = public
 as $$
-declare
-  raw_username text := coalesce(new.raw_user_meta_data->>'username', split_part(new.email, '@', 1));
-  ref_code     text := coalesce(new.raw_user_meta_data->>'referral_code', null);
-  generated    text := 'ONYX-' || upper(substring(md5(new.id::text) from 1 for 8));
 begin
-  insert into public.users (id, username, email, referral_code, email_verified)
+  insert into public.profiles (id, username, email)
   values (
     new.id,
-    raw_username,
-    new.email,
-    generated,
-    new.email_confirmed_at is not null
-  );
-
-  -- Link referrer if their code matches
-  if ref_code is not null then
-    update public.users
-    set referred_by_id = (select id from public.users where referral_code = ref_code limit 1)
-    where id = new.id;
-  end if;
-
+    coalesce(new.raw_user_meta_data->>'username', split_part(new.email, '@', 1)),
+    new.email
+  )
+  on conflict (id) do nothing;
   return new;
 end;
 $$;
@@ -475,35 +113,9 @@ create trigger on_auth_user_created
   after insert on auth.users
   for each row execute function public.handle_new_user();
 
--- ── SEED DATA ──
--- ════════════════════════════════════════════════════════════════
--- Onyx Services — Initial seed data
--- Run AFTER schema.sql. Inserts the 8 demo products + their plans.
--- ════════════════════════════════════════════════════════════════
-
-insert into public.products (slug, name, short_desc, long_desc, category, type, base_price_cents, max_hwid_slots, current_version, is_active, is_featured)
-values
-  ('onyx-rage',    'Onyx Rage',    'High-performance automation engine.',                           'Onyx Rage is our flagship automation tool — precision-built, constantly updated, and impossible to detect. Used by thousands of operators who need an edge.', 'Automation', 'software',  999, 2, '2.1.0', true,  true),
-  ('onyx-stealth', 'Onyx Stealth', 'Precision detection bypass for operators at the edge.',          'Cutting edge stealth layer with cryptographic process isolation.',  'Stealth',    'software', 1499, 1, '1.4.2', true,  false),
-  ('onyx-core',    'Onyx Core',    'The reliable foundation. Fast, daily-driver, always updated.',   'The foundation. Everything you need, nothing you do not.',          'Utility',    'software',  699, 2, '3.0.1', true,  true),
-  ('onyx-apex',    'Onyx Apex',    'Elite tier access. Reserved for serious operators.',             'Our most powerful tool — reserved for serious operators only.',     'Premium',    'software', 2999, 1, '1.0.3', true,  false),
-  ('onyx-pulse',   'Onyx Pulse',   'Lightweight automation companion. Quick setup, focused.',        'Lightweight companion automation tool.',                            'Automation', 'software',  499, 2, '0.9.1', true,  false),
-  ('onyx-blade',   'Onyx Blade',   'Cutting-edge stealth with cryptographic process isolation.',     'Cutting-edge stealth layer.',                                       'Stealth',    'software', 1799, 1, '2.4.0', true,  false),
-  ('onyx-echo',    'Onyx Echo',    'Companion utility for monitoring sessions, HWIDs, tool state.',  'Monitoring companion utility.',                                     'Utility',    'software',  599, 2, '1.2.7', true,  false),
-  ('onyx-vortex',  'Onyx Vortex',  'Premium toolset with advanced session orchestration.',           'Premium toolset.',                                                  'Premium',    'software', 2499, 2, '1.5.2', true,  false)
-on conflict (slug) do nothing;
-
--- Insert plans for each product
-do $$
-declare
-  rec record;
-begin
-  for rec in select id, base_price_cents from public.products loop
-    insert into public.product_plans (product_id, plan_id, label, price_cents, duration_days, hwid_slots, sort_order)
-    values
-      (rec.id, 'monthly',   '1 Month',  rec.base_price_cents,      30,  2, 1),
-      (rec.id, 'quarterly', '3 Months', rec.base_price_cents * 2,  90,  2, 2),
-      (rec.id, 'lifetime',  'Lifetime', rec.base_price_cents * 5,  null, 2, 3)
-    on conflict (product_id, plan_id) do nothing;
-  end loop;
-end $$;
+-- Backfill any existing auth.users without profiles
+insert into public.profiles (id, username, email)
+select u.id, split_part(u.email, '@', 1), u.email
+from auth.users u
+where not exists (select 1 from public.profiles p where p.id = u.id)
+on conflict (id) do nothing;
