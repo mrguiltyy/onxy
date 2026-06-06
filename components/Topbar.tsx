@@ -1,7 +1,7 @@
 'use client'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, KeyRound, Plus, Wallet, User, ChevronDown, MessageSquare, Shield } from 'lucide-react'
+import { LayoutDashboard, KeyRound, Plus, Wallet, User, ChevronDown, MessageSquare, Shield, Boxes, BookOpen } from 'lucide-react'
 import { cn, formatPrice } from '@/lib/utils'
 import { BrandRow } from './Brand'
 
@@ -9,9 +9,10 @@ interface TopbarProps {
   username: string
   balanceCents: number
   isAdmin?: boolean
+  canManageApps?: boolean
 }
 
-const tabs = [
+const baseTabs = [
   { href: '/dashboard',           icon: LayoutDashboard, label: 'Dashboard' },
   { href: '/dashboard/licenses',  icon: KeyRound,        label: 'Licenses'  },
   { href: '/dashboard/generate',  icon: Plus,            label: 'Generate'  },
@@ -20,8 +21,16 @@ const tabs = [
   { href: '/dashboard/account',   icon: User,            label: 'Account'   },
 ]
 
-export function Topbar({ username, balanceCents, isAdmin }: TopbarProps) {
+const resellerTabs = [
+  { href: '/dashboard/applications', icon: Boxes,    label: 'Applications' },
+  { href: '/dashboard/docs',         icon: BookOpen, label: 'Docs'         },
+]
+
+export function Topbar({ username, balanceCents, isAdmin, canManageApps }: TopbarProps) {
   const pathname = usePathname()
+  const tabs = canManageApps
+    ? [...baseTabs.slice(0, 4), ...resellerTabs, ...baseTabs.slice(4)]
+    : baseTabs
 
   return (
     <header

@@ -42,6 +42,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const ann = (annRaw ?? null) as Announcement | null
   const variant = (ann?.variant ?? 'info') as 'info' | 'warn' | 'success' | 'brand'
   const isAdmin = profile?.role === 'super_admin' || profile?.role === 'support'
+  const canManageApps = profile?.role === 'super_admin' || profile?.role === 'reseller'
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -50,6 +51,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
         username={profile?.username ?? user.email?.split('@')[0] ?? 'User'}
         balanceCents={Number(profile?.balance_cents ?? 0)}
         isAdmin={isAdmin}
+        canManageApps={canManageApps}
       />
       {ann && (
         <AnnouncementBar
