@@ -6,8 +6,23 @@ const geistSans = Geist({ variable: '--font-geist-sans', subsets: ['latin'], dis
 const geistMono = Geist_Mono({ variable: '--font-geist-mono', subsets: ['latin'], display: 'swap' })
 
 export const metadata: Metadata = {
-  title:       { default: 'Onyx Services', template: '%s · Onyx Services' },
+  title:       { default: 'Onyx Panel', template: '%s · Onyx Panel' },
   description: 'Premium private tool platform with hardware-bound licensing.',
+  applicationName: 'Onyx Panel',
+  authors:     [{ name: 'Onyx Services' }],
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? 'https://onxy.cc'),
+  openGraph: {
+    title:       'Onyx Panel',
+    description: 'Premium private tool platform.',
+    siteName:    'Onyx Panel',
+    type:        'website',
+  },
+  themeColor: '#0a0d14',
+  icons: {
+    icon: [
+      { url: '/favicon.svg', type: 'image/svg+xml' },
+    ],
+  },
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

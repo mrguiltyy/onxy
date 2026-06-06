@@ -5,6 +5,7 @@ import { useSearchParams } from 'next/navigation'
 import { Mail, Lock, User, AlertCircle, ArrowRight, CheckCircle2 } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
+import { Brand } from '@/components/Brand'
 import { supabaseBrowser } from '@/lib/supabase/client'
 
 export default function RegisterPage() {
@@ -30,11 +31,14 @@ function Form() {
     setLoading(true); setError(null)
     try {
       const supabase = supabaseBrowser()
+      // Use the public app URL when available (matches Supabase Site URL),
+      // fall back to whatever the browser is hosted at.
+      const appOrigin = process.env.NEXT_PUBLIC_APP_URL ?? window.location.origin
       const { data, error: authError } = await supabase.auth.signUp({
         email,
         password,
         options: {
-          emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`,
+          emailRedirectTo: `${appOrigin}/auth/callback?next=${encodeURIComponent(next)}`,
           data: { username },
         },
       })
@@ -60,22 +64,10 @@ function Form() {
     <div className="min-h-screen flex items-center justify-center px-4 py-12">
       <div className="w-full max-w-[400px]">
 
-        {/* Logo */}
-        <Link href="/" className="flex items-center justify-center gap-2.5 mb-10">
-          <div
-            className="w-9 h-9 rounded-md flex items-center justify-center text-white font-bold"
-            style={{
-              background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
-              boxShadow: '0 0 0 1px rgba(59,130,246,0.3), 0 6px 20px rgba(59,130,246,0.3)',
-            }}
-          >
-            O
-          </div>
-          <div className="flex flex-col">
-            <span className="text-[15px] font-bold leading-none">Onyx</span>
-            <span className="text-[10px] text-[var(--fg-mute)] tracking-wider uppercase mt-1">Panel</span>
-          </div>
-        </Link>
+        {/* Brand */}
+        <div className="flex justify-center mb-10">
+          <Brand size="lg" />
+        </div>
 
         <div className="card p-7">
           {done ? (
