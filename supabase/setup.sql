@@ -114,6 +114,21 @@ create table if not exists public.announcements (
 create index if not exists idx_announcements_active on public.announcements(is_active, created_at desc);
 
 -- ════════════════════════════════════════════════════════════════
+-- GRANTS (required — without these you get "permission denied")
+-- These are normally auto-applied by Supabase, but get wiped if you
+-- run `drop schema public cascade` to clean up.
+-- RLS policies below further restrict what each row can do.
+-- ════════════════════════════════════════════════════════════════
+grant usage on schema public to anon, authenticated, service_role;
+grant all on all tables    in schema public to anon, authenticated, service_role;
+grant all on all sequences in schema public to anon, authenticated, service_role;
+grant all on all functions in schema public to anon, authenticated, service_role;
+
+alter default privileges in schema public grant all on tables    to anon, authenticated, service_role;
+alter default privileges in schema public grant all on sequences to anon, authenticated, service_role;
+alter default privileges in schema public grant all on functions to anon, authenticated, service_role;
+
+-- ════════════════════════════════════════════════════════════════
 -- ROW LEVEL SECURITY
 -- ════════════════════════════════════════════════════════════════
 alter table public.profiles        enable row level security;
