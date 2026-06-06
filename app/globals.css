@@ -21,11 +21,16 @@
   --fg-mute:      #6b7280;
   --fg-faint:     #475569;
 
-  /* Brand — electric blue */
-  --brand:        #3b82f6;
-  --brand-hover:  #2563eb;
-  --brand-faint:  rgba(59, 130, 246, 0.10);
-  --brand-glow:   rgba(59, 130, 246, 0.25);
+  /* Brand — soft pastel pink → blue gradient */
+  --brand:        #f0a4b7;                                  /* pastel pink (primary) */
+  --brand-pink:   #f0a4b7;
+  --brand-blue:   #a2c8ee;
+  --brand-rose:   #ffd1dc;
+  --brand-hover:  #e893a8;
+  --brand-faint:  rgba(240, 164, 183, 0.10);
+  --brand-glow:   rgba(240, 164, 183, 0.30);
+  --brand-gradient:       linear-gradient(135deg, #f0a4b7 0%, #c5b3df 50%, #a2c8ee 100%);
+  --brand-gradient-soft:  linear-gradient(135deg, rgba(240,164,183,0.15) 0%, rgba(162,200,238,0.15) 100%);
 
   /* Status */
   --ok:           #22c55e;
@@ -131,11 +136,12 @@ body {
 .btn:disabled              { opacity: 0.5; cursor: not-allowed; }
 
 .btn-primary {
-  background: var(--brand);
-  color: white;
+  background: var(--brand-gradient);
+  color: #3a2630;
+  font-weight: 700;
 }
 .btn-primary:hover:not(:disabled) {
-  background: var(--brand-hover);
+  filter: brightness(1.05);
 }
 
 .btn-outline {
@@ -412,13 +418,13 @@ textarea.input:focus {
 /* ── Primary button glow — branded hover state ──────────────── */
 .btn-primary {
   position: relative;
-  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.12) inset,
-              0 4px 14px rgba(59, 130, 246, 0.25);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.25) inset,
+              0 4px 14px rgba(240, 164, 183, 0.25);
 }
 
 .btn-primary:hover:not(:disabled) {
-  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.16) inset,
-              0 6px 22px rgba(59, 130, 246, 0.40);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.30) inset,
+              0 6px 22px rgba(240, 164, 183, 0.40);
 }
 
 .btn-primary:disabled {
@@ -492,16 +498,9 @@ body {
   opacity: 0.5;
 }
 
-/* ── Subtle keyframe for status dots (live pulse) ───────────── */
-@keyframes pulse-live {
-  0%, 100% { box-shadow: 0 0 6px currentColor; opacity: 1; }
-  50%       { box-shadow: 0 0 12px currentColor; opacity: 0.7; }
-}
-
+/* ── Status dot (no animation — the pulse was the AI tell) ── */
 .dot-ok {
   background: var(--ok);
-  color: var(--ok);
-  animation: pulse-live 2s ease-in-out infinite;
 }
 
 /* ── Brand wordmark — used in emails & static contexts ──────── */
@@ -530,7 +529,3 @@ body {
 .scrollbar-none::-webkit-scrollbar { display: none; }
 .scrollbar-none { scrollbar-width: none; }
 
-/* ── Reduced motion — kill heavy animations ─────────────────── */
-@media (prefers-reduced-motion: reduce) {
-  .dot-ok { animation: none; }
-}

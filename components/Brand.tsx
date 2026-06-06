@@ -2,62 +2,80 @@ import Link from 'next/link'
 import { cn } from '@/lib/utils'
 
 interface BrandProps {
-  size?: 'sm' | 'md' | 'lg'
-  href?: string
-  withStatus?: boolean
+  size?:    'sm' | 'md' | 'lg' | 'xl'
+  href?:    string
+  tagline?: boolean
   className?: string
 }
 
 /**
- * Brand mark — the canonical Onyx logo + wordmark.
- *
- * Used in the topbar, auth pages, footers, error pages.
- * The hex-cut "O" tile is the visual signature.
+ * OP brand wordmark — pink-to-blue gradient on the "OP" letters.
+ * Optional tagline beneath.
  */
-export function Brand({ size = 'md', href = '/', withStatus = false, className }: BrandProps) {
+export function Brand({ size = 'md', href = '/', tagline = false, className }: BrandProps) {
   const sz = {
-    sm: { tile: 'w-7 h-7 text-[12px]',  word: 'text-[13px]', sub: 'text-[9px]'  },
-    md: { tile: 'w-8 h-8 text-[14px]',  word: 'text-[14px]', sub: 'text-[10px]' },
-    lg: { tile: 'w-10 h-10 text-[16px]',word: 'text-[16px]', sub: 'text-[11px]' },
+    sm: { word: 36, sub: 10 },
+    md: { word: 44, sub: 11 },
+    lg: { word: 64, sub: 12 },
+    xl: { word: 84, sub: 13 },
   }[size]
 
   const inner = (
-    <div className={cn('flex items-center gap-2.5 group', className)}>
+    <div className={cn('inline-flex flex-col items-center gap-1', className)}>
       <span
-        className={cn('relative rounded-md flex items-center justify-center text-white font-bold shrink-0', sz.tile)}
+        className="font-black leading-none"
         style={{
-          background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 60%, #1d4ed8 100%)',
-          boxShadow:  '0 0 0 1px rgba(59,130,246,0.35), 0 4px 14px rgba(59,130,246,0.28), inset 0 1px 0 rgba(255,255,255,0.18)',
+          fontSize:        sz.word,
+          fontFamily:      'var(--font-geist-sans), Inter, system-ui, sans-serif',
+          letterSpacing:   '-0.03em',
+          backgroundImage: 'linear-gradient(135deg, #f0a4b7 0%, #c5b3df 50%, #a2c8ee 100%)',
+          backgroundClip:  'text',
+          WebkitBackgroundClip: 'text',
+          color:           'transparent',
+          WebkitTextFillColor: 'transparent',
         }}
       >
-        O
-        {/* hex-cut corner notch — the brand signature */}
-        <span
-          className="absolute -top-px -right-px w-2 h-2 pointer-events-none"
-          style={{
-            background: 'var(--bg)',
-            clipPath: 'polygon(0 0, 100% 0, 100% 100%)',
-            borderTopRightRadius: '6px',
-          }}
-        />
+        OP
       </span>
-
-      <div className="flex flex-col leading-none">
-        <span className={cn('font-bold tracking-tight text-[var(--fg)]', sz.word)}>
-          Onyx
-        </span>
-        <span className={cn('text-[var(--fg-mute)] tracking-[0.18em] uppercase mt-1', sz.sub)}>
-          Panel
-        </span>
-      </div>
-
-      {withStatus && (
-        <span className="hidden md:inline-flex pill pill-ok ml-1">
-          <span className="dot dot-ok" /> Online
-        </span>
+      {tagline && (
+        <p
+          className="font-medium text-center mt-2"
+          style={{ fontSize: sz.sub, color: 'var(--fg-dim)', letterSpacing: '0.01em' }}
+        >
+          #1 Seller for cheap resell panels
+        </p>
       )}
     </div>
   )
 
+  return href ? <Link href={href} className="inline-flex">{inner}</Link> : inner
+}
+
+/**
+ * BrandRow — horizontal mark for navbars (small "OP" letters inline).
+ */
+export function BrandRow({ href = '/', className }: { href?: string; className?: string }) {
+  const inner = (
+    <span className={cn('inline-flex items-baseline gap-2', className)}>
+      <span
+        className="font-black leading-none"
+        style={{
+          fontSize:        22,
+          fontFamily:      'var(--font-geist-sans), Inter, system-ui, sans-serif',
+          letterSpacing:   '-0.05em',
+          backgroundImage: 'linear-gradient(135deg, #f0a4b7 0%, #c5b3df 50%, #a2c8ee 100%)',
+          backgroundClip:  'text',
+          WebkitBackgroundClip: 'text',
+          color:           'transparent',
+          WebkitTextFillColor: 'transparent',
+        }}
+      >
+        OP
+      </span>
+      <span className="font-mono text-[10.5px] uppercase tracking-[0.2em]" style={{ color: 'var(--fg-mute)' }}>
+        Panel
+      </span>
+    </span>
+  )
   return href ? <Link href={href} className="inline-flex">{inner}</Link> : inner
 }

@@ -1,24 +1,26 @@
 'use client'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, KeyRound, Plus, Wallet, User, ChevronDown } from 'lucide-react'
+import { LayoutDashboard, KeyRound, Plus, Wallet, User, ChevronDown, MessageSquare, Shield } from 'lucide-react'
 import { cn, formatPrice } from '@/lib/utils'
-import { Brand } from './Brand'
+import { BrandRow } from './Brand'
 
 interface TopbarProps {
   username: string
   balanceCents: number
+  isAdmin?: boolean
 }
 
 const tabs = [
   { href: '/dashboard',           icon: LayoutDashboard, label: 'Dashboard' },
   { href: '/dashboard/licenses',  icon: KeyRound,        label: 'Licenses'  },
   { href: '/dashboard/generate',  icon: Plus,            label: 'Generate'  },
-  { href: '/dashboard/balance',   icon: Wallet,          label: 'Top-up Balance' },
+  { href: '/dashboard/balance',   icon: Wallet,          label: 'Top-up'    },
+  { href: '/dashboard/tickets',   icon: MessageSquare,   label: 'Support'   },
   { href: '/dashboard/account',   icon: User,            label: 'Account'   },
 ]
 
-export function Topbar({ username, balanceCents }: TopbarProps) {
+export function Topbar({ username, balanceCents, isAdmin }: TopbarProps) {
   const pathname = usePathname()
 
   return (
@@ -36,7 +38,7 @@ export function Topbar({ username, balanceCents }: TopbarProps) {
 
           {/* Brand */}
           <div className="py-3 shrink-0">
-            <Brand size="md" href="/dashboard" withStatus />
+            <BrandRow href="/dashboard" />
           </div>
 
           {/* Tabs */}
@@ -62,6 +64,20 @@ export function Topbar({ username, balanceCents }: TopbarProps) {
 
           {/* Balance + user chip */}
           <div className="flex items-center gap-3 shrink-0">
+            {isAdmin && (
+              <Link
+                href="/admin"
+                className="hidden md:inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-[12px] font-semibold transition-colors"
+                style={{
+                  background: 'var(--brand-faint)',
+                  color: 'var(--brand)',
+                  border: '1px solid rgba(59,130,246,0.25)',
+                }}
+              >
+                <Shield size={11} />
+                Admin
+              </Link>
+            )}
             <div className="hidden sm:flex flex-col items-end">
               <span className="text-[10px] text-[var(--fg-mute)] uppercase tracking-wider">Balance</span>
               <span className="text-[14px] text-[var(--ok)] font-bold tabular-nums leading-tight">
@@ -73,8 +89,11 @@ export function Topbar({ username, balanceCents }: TopbarProps) {
               className="flex items-center gap-2 rounded-md px-2.5 py-1.5 border border-[var(--hairline)] hover:bg-[var(--surface-2)] hover:border-[var(--hairline-2)] transition-colors"
             >
               <div
-                className="w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-bold text-white"
-                style={{ background: 'linear-gradient(135deg, #3b82f6, #2563eb)' }}
+                className="w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-bold"
+                style={{
+                  background: 'var(--brand-gradient)',
+                  color: '#3a2630',
+                }}
               >
                 {username[0]?.toUpperCase() ?? 'U'}
               </div>

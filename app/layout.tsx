@@ -6,22 +6,19 @@ const geistSans = Geist({ variable: '--font-geist-sans', subsets: ['latin'], dis
 const geistMono = Geist_Mono({ variable: '--font-geist-mono', subsets: ['latin'], display: 'swap' })
 
 export const metadata: Metadata = {
-  title:       { default: 'Onyx Panel', template: '%s · Onyx Panel' },
-  description: 'Premium private tool platform with hardware-bound licensing.',
-  applicationName: 'Onyx Panel',
-  authors:     [{ name: 'Onyx Services' }],
+  title:       { default: 'OP Panel — #1 Seller for cheap resell panels', template: '%s · OP' },
+  description: '#1 seller for cheap resell panels. Generate keys, manage your wallet, top up instantly.',
+  applicationName: 'OP',
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? 'https://onxy.cc'),
   openGraph: {
-    title:       'Onyx Panel',
-    description: 'Premium private tool platform.',
-    siteName:    'Onyx Panel',
+    title:       'OP — #1 Seller for cheap resell panels',
+    description: 'Generate keys, manage your wallet, top up instantly.',
+    siteName:    'OP',
     type:        'website',
   },
   themeColor: '#0a0d14',
   icons: {
-    icon: [
-      { url: '/favicon.svg', type: 'image/svg+xml' },
-    ],
+    icon: [{ url: '/favicon.svg', type: 'image/svg+xml' }],
   },
 }
 

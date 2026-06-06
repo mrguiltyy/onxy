@@ -66,7 +66,7 @@ function Form() {
 
         {/* Brand */}
         <div className="flex justify-center mb-10">
-          <Brand size="lg" />
+          <Brand size="xl" tagline />
         </div>
 
         <div className="card p-7">
