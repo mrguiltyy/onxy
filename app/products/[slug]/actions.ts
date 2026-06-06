@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { supabaseServer, supabaseAdmin } from '@/lib/supabase/server'
+import { notifyResellerApplication } from '@/lib/discord-webhook'
 
 interface Profile { role: string }
 interface Product { id: string; reseller_open: boolean; reseller_auto_approve: boolean }
@@ -87,6 +88,23 @@ export async function submitResellApplication(
       body:     'You can now generate keys for this product at wholesale.',
       link_url: '/dashboard/resells',
     } as never)
+  }
+
+  // Fan out to Discord (best-effort)
+  if (status === 'pending') {
+    const { data: profRaw } = await admin.from('profiles').select('username').eq('id', user.id).maybeSingle()
+    const { data: prodNameRaw } = await admin.from('products').select('name').eq('id', product.id).maybeSingle()
+    const profile = profRaw as { username: string } | null
+    const prodName = (prodNameRaw as { name: string } | null)?.name ?? 'product'
+    if (profile) {
+      await notifyResellerApplication({
+        user_username: profile.username,
+        product_name:  prodName,
+        custom_name:   customName,
+        pitch,
+        site_url:      process.env.NEXT_PUBLIC_SITE_URL ?? 'https://onxy.cc',
+      })
+    }
   }
 
   revalidatePath('/products')

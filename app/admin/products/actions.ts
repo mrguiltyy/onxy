@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { supabaseServer, supabaseAdmin } from '@/lib/supabase/server'
+import { emailResellerApproved, emailResellerRejected } from '@/lib/email'
 
 interface Profile { role: string }
 
@@ -176,6 +177,14 @@ export async function approveResellerGrant(grantId: string, discountPct = 0): Pr
     link_url: '/dashboard/resells',
   } as never)
 
+  // Email the reseller
+  const { data: profRaw } = await admin
+    .from('profiles').select('email, username').eq('id', g.reseller_id).maybeSingle()
+  const profile = profRaw as { email: string; username: string } | null
+  if (profile) {
+    await emailResellerApproved(profile.email, profile.username, g.custom_name)
+  }
+
   revalidatePath('/admin/resellers')
   revalidatePath('/dashboard/resells')
   return { ok: true }
@@ -202,6 +211,14 @@ export async function rejectResellerGrant(grantId: string, reason: string): Prom
     body:     reason || 'See application for details.',
     link_url: '/dashboard/resells',
   } as never)
+
+  // Email the reseller
+  const { data: profRaw } = await admin
+    .from('profiles').select('email, username').eq('id', g.reseller_id).maybeSingle()
+  const profile = profRaw as { email: string; username: string } | null
+  if (profile) {
+    await emailResellerRejected(profile.email, profile.username, g.custom_name, reason)
+  }
 
   revalidatePath('/admin/resellers')
   return { ok: true }

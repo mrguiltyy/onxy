@@ -122,3 +122,70 @@ export async function emailTicketCreated(adminEmail: string, username: string, t
     }),
   })
 }
+
+export async function emailResellerApproved(toEmail: string, username: string, productName: string) {
+  return sendEmail({
+    to: toEmail,
+    subject: `Approved to resell ${productName}`,
+    html: wrap({
+      preheader: 'Your reseller application was approved.',
+      heading:   "You're approved",
+      body: `<p>Hi ${username} — your application to resell <strong style="color:#e8eaed">${productName}</strong> was approved. You can now generate keys at wholesale pricing.</p>`,
+      ctaLabel:  'Manage resells',
+      ctaUrl:    `${APP_URL}/dashboard/resells`,
+    }),
+  })
+}
+
+export async function emailResellerRejected(toEmail: string, username: string, productName: string, reason: string) {
+  return sendEmail({
+    to: toEmail,
+    subject: `Application not approved: ${productName}`,
+    html: wrap({
+      preheader: 'Your reseller application was not approved.',
+      heading:   'Application not approved',
+      body: `
+        <p>Hi ${username} — unfortunately we couldn't approve your application to resell <strong style="color:#e8eaed">${productName}</strong>.</p>
+        ${reason ? `<p style="margin-top:16px;padding:16px;background:#131826;border-left:3px solid #ef4444;border-radius:4px;font-size:14px;color:#9aa3b3">${reason}</p>` : ''}
+        <p style="margin-top:16px">You can apply for other products, or appeal by opening a ticket.</p>
+      `,
+      ctaLabel:  'Browse products',
+      ctaUrl:    `${APP_URL}/products`,
+    }),
+  })
+}
+
+export async function emailWelcome(toEmail: string, username: string) {
+  return sendEmail({
+    to: toEmail,
+    subject: `Welcome to OP, ${username}`,
+    html: wrap({
+      preheader: 'Welcome to OP.',
+      heading:   'Welcome to OP',
+      body: `
+        <p>Hi ${username} — your account is ready. You can browse our catalog, generate license keys, and apply to resell.</p>
+        <ul style="margin:16px 0;padding-left:18px;color:#9aa3b3;line-height:1.8">
+          <li>Earn <strong style="color:#e8eaed">$1 credit</strong> by linking your Discord account</li>
+          <li>Upgrade to <strong style="color:#e8eaed">Reseller</strong> to white-label our tools at wholesale</li>
+          <li>Use our <strong style="color:#e8eaed">auth engine</strong> in your own apps (C#, C++, Python, Node, Java, VB.NET)</li>
+        </ul>
+      `,
+      ctaLabel:  'Open dashboard',
+      ctaUrl:    `${APP_URL}/dashboard`,
+    }),
+  })
+}
+
+export async function emailWalletTopup(toEmail: string, username: string, cents: number) {
+  return sendEmail({
+    to: toEmail,
+    subject: `Wallet credited $${(cents / 100).toFixed(2)}`,
+    html: wrap({
+      preheader: 'Your wallet was topped up.',
+      heading:   `Wallet credited $${(cents / 100).toFixed(2)}`,
+      body: `<p>Hi ${username} — your payment was successful and your wallet has been credited. Funds are available immediately.</p>`,
+      ctaLabel:  'View balance',
+      ctaUrl:    `${APP_URL}/dashboard/balance`,
+    }),
+  })
+}

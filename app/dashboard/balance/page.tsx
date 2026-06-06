@@ -1,11 +1,12 @@
 'use client'
-import { useState, useEffect, useCallback } from 'react'
+import { Suspense, useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import { Wallet, ArrowDownLeft, ArrowUpRight, AlertCircle, CheckCircle2, KeyRound, User } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { supabaseBrowser } from '@/lib/supabase/client'
 import { formatPrice, relativeTime } from '@/lib/utils'
+import { StripeTopupCard } from './StripeTopupCard'
 
 interface Tx {
   id: string
@@ -129,6 +130,11 @@ export default function BalancePage() {
             <Stat label="Total Redeemed"value={formatPrice(history.filter(t => t.type === 'topup').reduce((s, t) => s + Number(t.amount_cents), 0))} />
           </div>
         </div>
+
+        {/* Stripe card top-up */}
+        <Suspense fallback={null}>
+          <StripeTopupCard />
+        </Suspense>
 
         {/* Redeem */}
         <div className="card p-5">

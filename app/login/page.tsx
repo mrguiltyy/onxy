@@ -6,6 +6,7 @@ import { Mail, Lock, AlertCircle, ArrowRight } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Brand } from '@/components/Brand'
+import { DiscordButton } from '@/components/DiscordButton'
 import { supabaseBrowser } from '@/lib/supabase/client'
 
 export default function LoginPage() {
@@ -66,6 +67,17 @@ function Form() {
               <p className="text-[13px] text-[var(--fg)]">{error}</p>
             </div>
           )}
+
+          {/* OAuth */}
+          <div className="mb-5">
+            <DiscordButton label="Continue with Discord" />
+          </div>
+
+          <div className="flex items-center gap-3 mb-5">
+            <div className="flex-1 h-px" style={{ background: 'var(--hairline)' }} />
+            <span className="text-[10.5px] uppercase tracking-wider text-[var(--fg-mute)]">or with email</span>
+            <div className="flex-1 h-px" style={{ background: 'var(--hairline)' }} />
+          </div>
 
           <form onSubmit={submit} className="flex flex-col gap-4">
             <Input
