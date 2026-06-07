@@ -1,9 +1,8 @@
 import Link from 'next/link'
-import { KeyRound, Plus, Wallet, Activity, ArrowRight, ShieldCheck, BookOpen, Boxes, MessageSquare, Bell, LifeBuoy } from 'lucide-react'
+import { KeyRound, Plus, Wallet, Activity, ArrowRight, BookOpen, Boxes, MessageSquare, LifeBuoy, Sparkles, TrendingUp, Calendar, Zap, ChevronRight } from 'lucide-react'
 import { supabaseServer, supabaseAdmin } from '@/lib/supabase/server'
 import { formatPrice, relativeTime } from '@/lib/utils'
 import { Pill } from '@/components/ui/Pill'
-import { StatusPanel } from './widgets/StatusPanel'
 import { ActivityHeatmap } from './widgets/ActivityHeatmap'
 import { MonthlyChart } from './widgets/MonthlyChart'
 
@@ -16,27 +15,25 @@ interface Profile {
   parent_id:          string
   role:               string
   tier?:              string
-  two_factor_enabled?: boolean
+  two_factor_enabled?:boolean
   avatar_url?:        string | null
   created_at:         string
 }
 interface License { id: string; product: string; key_prefix: string; status: string; expires_at: string | null; created_at: string }
-interface Activity { id: string; event_type: string; target_label: string | null; created_at: string }
+interface ActivityRow { id: string; event_type: string; target_label: string | null; created_at: string }
 interface Announcement { message: string; variant: string; created_at: string }
+interface Tx { id: string; type: string; amount_cents: number; description: string | null; created_at: string }
 
 export default async function DashboardPage() {
   const supabase = await supabaseServer()
   const { data: { user } } = await supabase.auth.getUser()
 
-  // Base columns (always exist). Then try to merge in onboarding extras.
   const { data: baseRaw } = await supabase
     .from('profiles')
     .select('username, email, balance_cents, parent_id, role, created_at')
     .eq('id', user!.id)
     .maybeSingle()
 
-  // Onboarding columns are optional — only present if onboarding.sql has been run.
-  // We try once; if it fails (column doesn't exist), defaults are used.
   let extras: { tier?: string; two_factor_enabled?: boolean; avatar_url?: string | null } = {}
   try {
     const { data: extRaw, error: extErr } = await supabase
@@ -45,11 +42,10 @@ export default async function DashboardPage() {
       .eq('id', user!.id)
       .maybeSingle()
     if (!extErr && extRaw) extras = extRaw as typeof extras
-  } catch { /* columns don't exist yet — onboarding.sql not run */ }
-
+  } catch {}
   const profile = (baseRaw ? { ...baseRaw, ...extras } : null) as Profile | null
 
-  const [licsRes, actsRes, annsRes] = await Promise.all([
+  const [licsRes, actsRes, annsRes, txRes] = await Promise.all([
     supabase.from('licenses')
       .select('id, product, key_prefix, status, expires_at, created_at')
       .eq('user_id', user!.id)
@@ -63,20 +59,25 @@ export default async function DashboardPage() {
       .select('message, variant, created_at')
       .eq('is_active', true)
       .order('created_at', { ascending: false })
-      .limit(4),
+      .limit(3),
+    supabase.from('transactions')
+      .select('id, type, amount_cents, description, created_at')
+      .eq('user_id', user!.id)
+      .order('created_at', { ascending: false })
+      .limit(5),
   ])
 
   const lics = (licsRes.data ?? []) as License[]
-  const acts = (actsRes.data ?? []) as Activity[]
+  const acts = (actsRes.data ?? []) as ActivityRow[]
   const anns = (annsRes.data ?? []) as Announcement[]
+  const txns = (txRes.data ?? []) as Tx[]
 
   // Aggregates
   const totalKeys   = lics.length
   const activeKeys  = lics.filter(l => l.status === 'active').length
-  const bannedKeys  = lics.filter(l => l.status === 'banned').length
-  const expiredKeys = lics.filter(l => l.status === 'expired').length
+  const expiringSoon = lics.filter(l => l.expires_at && new Date(l.expires_at).getTime() - Date.now() < 7 * 86_400_000 && new Date(l.expires_at).getTime() > Date.now()).length
 
-  // Activity heatmap: count per day for last 365 days
+  // Heatmap
   const admin = supabaseAdmin()
   const yearAgo = new Date(Date.now() - 365 * 86_400_000).toISOString()
   const { data: yearActsRaw } = await admin
@@ -85,193 +86,245 @@ export default async function DashboardPage() {
     .gte('created_at', yearAgo)
   const yearActs = (yearActsRaw as { created_at: string }[] | null) ?? []
   const heatmap = buildHeatmap(yearActs.map(a => a.created_at))
+  const yearTotal = yearActs.length
 
-  // Monthly chart: license generations per month last 7 months
+  // Monthly
   const monthly = buildMonthly(lics.map(l => l.created_at))
 
-  // 2FA recommendation
-  const show2FA = !profile?.two_factor_enabled
+  // Member since
+  const memberSince = profile?.created_at
+    ? new Date(profile.created_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
+    : 'recently'
 
   return (
-    <div className="animate-in space-y-5">
-      {/* Header */}
-      <div className="flex items-end justify-between gap-4 flex-wrap">
-        <div>
-          <h1 className="text-[24px] font-bold tracking-tight">Welcome back, {profile?.username}</h1>
-          <p className="text-[13px] text-[var(--fg-dim)] mt-0.5">Here&apos;s an overview of your panel.</p>
-        </div>
-        <Link href="/dashboard/generate" className="btn btn-primary btn-sm">
-          <Plus size={13} /> Generate key
-        </Link>
-      </div>
+    <div className="animate-in">
 
-      {/* Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+      {/* ── Hero ─ welcome + headline stats ───────────────────────── */}
+      <section
+        className="relative overflow-hidden rounded-xl mb-5 p-6 md:p-8"
+        style={{
+          background:
+            'linear-gradient(135deg, rgba(240,164,183,0.05), rgba(162,200,238,0.05)),' +
+            'var(--surface)',
+          border: '1px solid var(--hairline)',
+        }}
+      >
+        {/* Decorative blob */}
+        <div
+          className="absolute -right-20 -top-20 w-[260px] h-[260px] rounded-full opacity-40 pointer-events-none"
+          style={{ background: 'radial-gradient(closest-side, rgba(197,179,223,0.30), transparent)', filter: 'blur(20px)' }}
+        />
 
-        {/* ── Row 1 ─ Overview + Announcements + Quick Links + Discord ── */}
-
-        {/* Overview */}
-        <div className="lg:col-span-3 card p-5">
-          <p className="label-mono mb-4">Overview</p>
-          <div className="grid grid-cols-2 gap-3">
-            <Stat label="Total Licenses" value={totalKeys} />
-            <Stat label="Active" value={activeKeys} tone="ok" />
-            <Stat label="Banned" value={bannedKeys} tone="bad" />
-            <Stat label="Expired" value={expiredKeys} tone="warn" />
-          </div>
-          <div className="mt-4 pt-4 border-t" style={{ borderColor: 'var(--hairline)' }}>
-            <p className="text-[10px] text-[var(--fg-mute)] uppercase tracking-wider">Wallet balance</p>
-            <p className="text-[22px] font-bold text-[var(--ok)] tabular-nums leading-tight mt-1" style={{ letterSpacing: '-0.02em' }}>
-              {formatPrice(profile?.balance_cents ?? 0)}
+        <div className="relative grid grid-cols-1 md:grid-cols-[1fr_auto] gap-5 items-center">
+          <div>
+            <p className="label-mono mb-2">Dashboard</p>
+            <h1 className="text-[26px] md:text-[30px] font-bold tracking-tight" style={{ letterSpacing: '-0.025em' }}>
+              Hey {profile?.username},{' '}
+              <span style={{
+                background: 'var(--brand-gradient)',
+                WebkitBackgroundClip: 'text',
+                backgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+              }}>welcome back.</span>
+            </h1>
+            <p className="text-[13px] text-[var(--fg-dim)] mt-1">
+              Member since {memberSince} · {totalKeys} key{totalKeys === 1 ? '' : 's'} · {yearTotal} event{yearTotal === 1 ? '' : 's'} this year
             </p>
-            <Link href="/dashboard/balance" className="text-[11.5px] text-[var(--brand)] hover:underline inline-flex items-center gap-1 mt-1">
-              Top up <ArrowRight size={10} />
-            </Link>
+
+            <div className="flex items-center gap-3 mt-5 flex-wrap">
+              <Link href="/dashboard/generate" className="btn btn-primary btn-sm">
+                <Plus size={12} /> New key
+              </Link>
+              <Link href="/dashboard/balance" className="btn btn-secondary btn-sm">
+                <Wallet size={12} /> Top up
+              </Link>
+              <Link href="/dashboard/troubleshoot" className="btn btn-secondary btn-sm">
+                <LifeBuoy size={12} /> Get help
+              </Link>
+            </div>
+          </div>
+
+          {/* Hero stat tiles */}
+          <div className="grid grid-cols-3 gap-3 md:gap-4">
+            <HeroStat label="Active keys"     value={activeKeys}                  accent="ok" />
+            <HeroStat label="Wallet"          value={formatPrice(profile?.balance_cents ?? 0)} accent="brand" thin />
+            <HeroStat label="Expiring 7d"     value={expiringSoon}                accent={expiringSoon > 0 ? 'warn' : 'mute'} />
+          </div>
+        </div>
+      </section>
+
+      {/* ── Main 2-col grid ────────────────────────────────────────── */}
+      <div className="grid grid-cols-1 lg:grid-cols-[1.6fr_1fr] gap-5">
+
+        {/* ─── LEFT column ─── */}
+        <div className="space-y-5">
+
+          {/* Activity heatmap */}
+          <div className="card p-5">
+            <div className="flex items-center justify-between mb-1 flex-wrap gap-2">
+              <div>
+                <p className="label-mono">Your year so far</p>
+                <p className="text-[13px] text-[var(--fg-dim)] mt-0.5">
+                  <strong className="text-[var(--fg)] tabular-nums">{yearTotal}</strong> events across the last 12 months
+                </p>
+              </div>
+              <div className="flex items-center gap-1 text-[10.5px] text-[var(--fg-mute)]">
+                Less
+                <span className="flex items-center gap-0.5 mx-1">
+                  <span className="w-2.5 h-2.5 rounded-sm" style={{ background: 'var(--surface-2)' }} />
+                  <span className="w-2.5 h-2.5 rounded-sm" style={{ background: 'rgba(59,130,246,0.20)' }} />
+                  <span className="w-2.5 h-2.5 rounded-sm" style={{ background: 'rgba(59,130,246,0.45)' }} />
+                  <span className="w-2.5 h-2.5 rounded-sm" style={{ background: 'rgba(59,130,246,0.70)' }} />
+                  <span className="w-2.5 h-2.5 rounded-sm" style={{ background: 'var(--brand)' }} />
+                </span>
+                More
+              </div>
+            </div>
+            <div className="mt-4">
+              <ActivityHeatmap days={heatmap} />
+            </div>
+          </div>
+
+          {/* Recent activity stream */}
+          <div className="card overflow-hidden">
+            <div className="px-5 py-4 border-b flex items-center justify-between" style={{ borderColor: 'var(--hairline)' }}>
+              <p className="font-semibold text-[13.5px] flex items-center gap-2">
+                <Activity size={12} className="text-[var(--brand)]" /> Recent activity
+              </p>
+              <Link href="/dashboard/licenses" className="text-[11.5px] text-[var(--brand)] hover:underline inline-flex items-center gap-1">
+                Licenses <ChevronRight size={11} />
+              </Link>
+            </div>
+            {acts.length === 0 ? (
+              <div className="px-5 py-16 text-center">
+                <Sparkles size={24} className="mx-auto mb-2 text-[var(--fg-faint)]" />
+                <p className="text-[13px] text-[var(--fg-mute)] mb-3">No moves yet</p>
+                <Link href="/dashboard/generate" className="btn btn-primary btn-sm inline-flex">
+                  <Plus size={11} /> Generate your first key
+                </Link>
+              </div>
+            ) : (
+              <div className="divide-y" style={{ borderColor: 'var(--hairline)' }}>
+                {acts.map(a => {
+                  const color =
+                    a.event_type.includes('fail') || a.event_type.includes('banned') ? 'var(--bad)' :
+                    a.event_type.includes('generated') || a.event_type.includes('redeemed') ? 'var(--ok)' :
+                    'var(--brand)'
+                  return (
+                    <div key={a.id} className="px-5 py-3 flex items-center gap-3 hover:bg-[var(--surface-2)] transition-colors">
+                      <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: color, boxShadow: `0 0 6px ${color}50` }} />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[13px] font-medium capitalize">{a.event_type.replace(/_/g, ' ')}</p>
+                        {a.target_label && <p className="text-[11px] text-[var(--fg-dim)] font-mono truncate">{a.target_label}</p>}
+                      </div>
+                      <span className="text-[10.5px] text-[var(--fg-mute)] shrink-0">{relativeTime(a.created_at)}</span>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* Monthly chart */}
+          <div className="card p-5">
+            <p className="label-mono mb-1">Key generations</p>
+            <p className="text-[12px] text-[var(--fg-dim)] mb-4">Last 7 months</p>
+            <MonthlyChart data={monthly} />
           </div>
         </div>
 
-        {/* Announcements */}
-        <div className="lg:col-span-4 card p-5">
-          <div className="flex items-center justify-between mb-4">
-            <p className="label-mono">Announcements</p>
-            <Bell size={11} className="text-[var(--fg-mute)]" />
-          </div>
-          {anns.length === 0 ? (
-            <p className="text-[12.5px] text-[var(--fg-mute)]">No announcements right now.</p>
-          ) : (
-            <div className="space-y-3 max-h-[280px] overflow-y-auto pr-1">
-              {anns.map((a, i) => (
-                <div key={i} className="pb-3 border-b last:border-b-0" style={{ borderColor: 'var(--hairline)' }}>
-                  <div className="flex items-start justify-between gap-2 mb-0.5">
-                    <p className="text-[13px] font-semibold leading-snug">{a.message.split('\n')[0]?.slice(0, 80) ?? '—'}</p>
-                    <span className="text-[10px] text-[var(--fg-mute)] tabular-nums font-mono shrink-0">{new Date(a.created_at).toISOString().slice(0,10)}</span>
+        {/* ─── RIGHT column ─── */}
+        <div className="space-y-5">
+
+          {/* Announcements */}
+          <div className="card overflow-hidden">
+            <div className="px-5 py-4 border-b flex items-center justify-between" style={{ borderColor: 'var(--hairline)' }}>
+              <p className="font-semibold text-[13.5px] flex items-center gap-2">
+                <Sparkles size={12} className="text-[var(--brand)]" /> What&apos;s new
+              </p>
+              <span className="text-[10px] font-mono uppercase tracking-wider text-[var(--fg-mute)]">{anns.length} update{anns.length === 1 ? '' : 's'}</span>
+            </div>
+            {anns.length === 0 ? (
+              <p className="px-5 py-8 text-center text-[12.5px] text-[var(--fg-mute)]">Nothing new right now.</p>
+            ) : (
+              <div className="divide-y" style={{ borderColor: 'var(--hairline)' }}>
+                {anns.map((a, i) => (
+                  <div key={i} className="px-5 py-3">
+                    <p className="text-[12.5px] font-medium leading-snug">{a.message.split('\n')[0]?.slice(0, 90) ?? '—'}</p>
+                    <p className="text-[10.5px] text-[var(--fg-mute)] font-mono mt-0.5">{new Date(a.created_at).toLocaleDateString()}</p>
                   </div>
-                  {a.message.split('\n')[1] && (
-                    <p className="text-[11.5px] text-[var(--fg-dim)] line-clamp-2 leading-relaxed">{a.message.split('\n').slice(1).join(' ')}</p>
-                  )}
-                </div>
-              ))}
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Quick actions */}
+          <div className="card p-5">
+            <p className="label-mono mb-3">Jump to</p>
+            <div className="space-y-1.5">
+              <JumpRow href="/dashboard/licenses"     icon={<KeyRound size={12} />}      label="Licenses"     desc="All your keys" />
+              <JumpRow href="/dashboard/applications" icon={<Boxes size={12} />}         label="Applications" desc="Your auth apps" />
+              <JumpRow href="/dashboard/balance"      icon={<Wallet size={12} />}        label="Top-up"       desc="Add wallet credit" />
+              <JumpRow href="/dashboard/tickets"      icon={<MessageSquare size={12} />} label="Tickets"      desc="Support" />
+              <JumpRow href="/dashboard/docs"         icon={<BookOpen size={12} />}      label="Docs"         desc="SDK integration" />
+              <JumpRow href="/status"                 icon={<Zap size={12} />}           label="System status" desc="All systems" />
+            </div>
+          </div>
+
+          {/* Recent wallet activity */}
+          {txns.length > 0 && (
+            <div className="card overflow-hidden">
+              <div className="px-5 py-4 border-b" style={{ borderColor: 'var(--hairline)' }}>
+                <p className="font-semibold text-[13.5px] flex items-center gap-2">
+                  <Wallet size={12} className="text-[var(--brand)]" /> Recent wallet
+                </p>
+              </div>
+              <div className="divide-y" style={{ borderColor: 'var(--hairline)' }}>
+                {txns.map(t => (
+                  <div key={t.id} className="px-5 py-2.5 flex items-center justify-between gap-2">
+                    <div className="min-w-0 flex-1">
+                      <p className="text-[11.5px] font-mono uppercase tracking-wider text-[var(--fg-mute)]">{t.type.replace(/_/g, ' ')}</p>
+                      {t.description && <p className="text-[11px] text-[var(--fg-dim)] truncate">{t.description}</p>}
+                    </div>
+                    <span className={`text-[12.5px] font-bold tabular-nums shrink-0 ${t.amount_cents >= 0 ? 'text-[var(--ok)]' : 'text-[var(--bad)]'}`}>
+                      {t.amount_cents >= 0 ? '+' : ''}{formatPrice(t.amount_cents)}
+                    </span>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
-        </div>
 
-        {/* Quick Links */}
-        <div className="lg:col-span-3 card p-5">
-          <p className="label-mono mb-4">Quick links</p>
-          <div className="grid grid-cols-2 gap-2">
-            <QuickLink href="/dashboard/generate" icon={<Plus size={12} />}        label="Generate" />
-            <QuickLink href="/dashboard/licenses" icon={<KeyRound size={12} />}    label="Licenses" />
-            <QuickLink href="/dashboard/balance"  icon={<Wallet size={12} />}      label="Top-up" />
-            <QuickLink href="/dashboard/applications" icon={<Boxes size={12} />}   label="Apps" />
-            <QuickLink href="/dashboard/troubleshoot" icon={<LifeBuoy size={12} />}label="Help" />
-            <QuickLink href="/dashboard/tickets"  icon={<MessageSquare size={12} />}label="Tickets" />
-          </div>
-        </div>
-
-        {/* Discord join */}
-        <div className="lg:col-span-2 card overflow-hidden p-0 flex flex-col" style={{ minHeight: 280 }}>
+          {/* Discord */}
           <div
-            className="h-20 relative"
+            className="card overflow-hidden p-5"
             style={{
-              background: 'linear-gradient(135deg, #5865f2 0%, #7289da 50%, #4752c4 100%)',
-              borderBottom: '1px solid var(--hairline)',
+              background: 'linear-gradient(135deg, rgba(88,101,242,0.15), rgba(114,137,218,0.10))',
+              border: '1px solid rgba(88,101,242,0.30)',
             }}
           >
-            <svg viewBox="0 0 71 55" className="absolute right-3 top-3 opacity-25" width="42" height="42" fill="#fff">
-              <path d="M60.1 4.9C55.6 2.8 50.7 1.3 45.7 0.4c-.7 1.1-1.4 2.6-1.9 3.7-5.5-.8-10.9-.8-16.3 0-.5-1.1-1.2-2.6-1.9-3.7C20.3 1.3 15.4 2.8 10.9 4.9 1.6 18.7-1 32.1.3 45.4c6.1 4.5 12 7.2 17.8 9 1.4-1.9 2.6-3.9 3.6-5.9-2-.7-3.8-1.6-5.6-2.7.5-.3.9-.6 1.3-.9 11.6 5.3 24.2 5.3 35.7 0 .4.3.8.6 1.3.9-1.8 1-3.6 2-5.6 2.7 1.1 2 2.3 3.9 3.6 5.9 5.8-1.8 11.7-4.5 17.8-9 1.5-15.3-2.5-28.6-10.5-40.5zM23.7 37.3c-3.5 0-6.4-3.2-6.4-7.2s2.8-7.2 6.4-7.2 6.5 3.2 6.4 7.2c0 4-2.8 7.2-6.4 7.2zm23.6 0c-3.5 0-6.4-3.2-6.4-7.2s2.8-7.2 6.4-7.2 6.5 3.2 6.4 7.2c0 4-2.8 7.2-6.4 7.2z"/>
-            </svg>
-          </div>
-          <div className="p-4 flex flex-col flex-1">
-            <p className="font-semibold text-[14px] mb-0.5">Join Discord</p>
-            <p className="text-[11px] text-[var(--fg-dim)] leading-snug mb-3 flex-1">
-              Get support, updates and connect with other OP users.
-            </p>
-            <a
-              href="https://discord.gg/onxy"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="btn btn-sm w-full"
-              style={{ background: '#5865f2', color: '#fff', border: '1px solid rgba(255,255,255,0.10)' }}
-            >
-              Join server
-            </a>
-          </div>
-        </div>
-
-        {/* ── Row 2 ─ Recent activity + System status + Monthly chart ── */}
-
-        {/* Recent activity */}
-        <div className="lg:col-span-4 card p-0">
-          <div className="px-5 py-4 border-b flex items-center justify-between" style={{ borderColor: 'var(--hairline)' }}>
-            <p className="label-mono">Recent activity</p>
-            <Link href="/dashboard/licenses" className="text-[11.5px] text-[var(--brand)] hover:underline">View all</Link>
-          </div>
-          {acts.length === 0 ? (
-            <p className="px-5 py-10 text-center text-[12.5px] text-[var(--fg-mute)]">No recent activity</p>
-          ) : (
-            <div className="divide-y" style={{ borderColor: 'var(--hairline)' }}>
-              {acts.map(a => (
-                <div key={a.id} className="px-5 py-3 flex items-center gap-3">
-                  <span className="w-7 h-7 rounded-md flex items-center justify-center shrink-0"
-                    style={{ background: 'var(--brand-faint)', color: 'var(--brand)' }}>
-                    <Activity size={12} />
-                  </span>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-[12.5px] font-medium capitalize">{a.event_type}</p>
-                    {a.target_label && <p className="text-[11px] text-[var(--fg-dim)] font-mono truncate">{a.target_label}</p>}
-                  </div>
-                  <span className="text-[10.5px] text-[var(--fg-mute)] shrink-0">{relativeTime(a.created_at)}</span>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* System status */}
-        <div className="lg:col-span-4 card p-5">
-          <StatusPanel />
-        </div>
-
-        {/* Monthly stats chart */}
-        <div className="lg:col-span-4 card p-5">
-          <p className="label-mono mb-3">Monthly key generations</p>
-          <MonthlyChart data={monthly} />
-        </div>
-
-        {/* ── Row 3 ─ Activity heatmap full width ── */}
-        <div className="lg:col-span-12 card p-5">
-          <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
-            <p className="label-mono">Activity heatmap · last 12 months</p>
-            <div className="flex items-center gap-2 text-[10.5px] text-[var(--fg-mute)]">
-              Less
-              <span className="flex items-center gap-0.5">
-                <span className="w-2.5 h-2.5 rounded-sm" style={{ background: 'var(--surface-2)' }} />
-                <span className="w-2.5 h-2.5 rounded-sm" style={{ background: 'rgba(59,130,246,0.20)' }} />
-                <span className="w-2.5 h-2.5 rounded-sm" style={{ background: 'rgba(59,130,246,0.45)' }} />
-                <span className="w-2.5 h-2.5 rounded-sm" style={{ background: 'rgba(59,130,246,0.70)' }} />
-                <span className="w-2.5 h-2.5 rounded-sm" style={{ background: 'var(--brand)' }} />
-              </span>
-              More
+            <div className="flex items-start gap-3">
+              <svg viewBox="0 0 71 55" width="22" height="22" fill="#fff" className="mt-0.5 shrink-0">
+                <path d="M60.1 4.9C55.6 2.8 50.7 1.3 45.7 0.4c-.7 1.1-1.4 2.6-1.9 3.7-5.5-.8-10.9-.8-16.3 0-.5-1.1-1.2-2.6-1.9-3.7C20.3 1.3 15.4 2.8 10.9 4.9 1.6 18.7-1 32.1.3 45.4c6.1 4.5 12 7.2 17.8 9 1.4-1.9 2.6-3.9 3.6-5.9-2-.7-3.8-1.6-5.6-2.7.5-.3.9-.6 1.3-.9 11.6 5.3 24.2 5.3 35.7 0 .4.3.8.6 1.3.9-1.8 1-3.6 2-5.6 2.7 1.1 2 2.3 3.9 3.6 5.9 5.8-1.8 11.7-4.5 17.8-9 1.5-15.3-2.5-28.6-10.5-40.5zM23.7 37.3c-3.5 0-6.4-3.2-6.4-7.2s2.8-7.2 6.4-7.2 6.5 3.2 6.4 7.2c0 4-2.8 7.2-6.4 7.2zm23.6 0c-3.5 0-6.4-3.2-6.4-7.2s2.8-7.2 6.4-7.2 6.5 3.2 6.4 7.2c0 4-2.8 7.2-6.4 7.2z"/>
+              </svg>
+              <div className="flex-1">
+                <p className="font-semibold text-[13.5px] mb-0.5">Join our Discord</p>
+                <p className="text-[11.5px] text-[var(--fg-dim)] mb-3 leading-snug">
+                  Real-time updates, support, and free $1 wallet credit when you link.
+                </p>
+                <a
+                  href="https://discord.gg/onxy"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn btn-sm w-full"
+                  style={{ background: '#5865f2', color: '#fff', border: '1px solid rgba(255,255,255,0.10)' }}
+                >
+                  Join server
+                </a>
+              </div>
             </div>
           </div>
-          <ActivityHeatmap days={heatmap} />
         </div>
-
-        {/* 2FA recommendation */}
-        {show2FA && (
-          <div className="lg:col-span-12 rounded-md px-4 py-3 flex items-center justify-between gap-3 flex-wrap"
-            style={{ background: 'rgba(250,204,21,0.06)', border: '1px solid rgba(250,204,21,0.25)' }}>
-            <div className="flex items-center gap-2 text-[12.5px] text-[var(--fg-dim)]">
-              <ShieldCheck size={13} className="text-[var(--warn)]" />
-              <span><strong className="text-[var(--fg)]">Recommended:</strong> add 2FA for extra security.</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Link href="/dashboard/account" className="text-[12px] text-[var(--brand)] hover:underline">Set up</Link>
-              <span className="text-[var(--fg-mute)]">·</span>
-              <Link href="/faq" className="text-[12px] text-[var(--brand)] hover:underline">Get authenticator app</Link>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   )
@@ -286,7 +339,6 @@ function buildHeatmap(timestamps: string[]): { date: string; count: number }[] {
     const d = ts.slice(0, 10)
     byDay.set(d, (byDay.get(d) ?? 0) + 1)
   }
-  // last 365 days
   const out: { date: string; count: number }[] = []
   for (let i = 364; i >= 0; i--) {
     const d = new Date(Date.now() - i * 86_400_000).toISOString().slice(0, 10)
@@ -311,28 +363,40 @@ function buildMonthly(timestamps: string[]): { month: string; count: number }[] 
   return out
 }
 
-function Stat({ label, value, tone = 'brand' }: { label: string; value: number; tone?: 'brand' | 'ok' | 'bad' | 'warn' }) {
-  const c = tone === 'ok'  ? 'var(--ok)'
-          : tone === 'bad' ? 'var(--bad)'
-          : tone === 'warn'? 'var(--warn)'
-          : 'var(--fg)'
+function HeroStat({ label, value, accent, thin }: { label: string; value: string | number; accent: 'ok' | 'brand' | 'warn' | 'mute'; thin?: boolean }) {
+  const c =
+    accent === 'ok'   ? 'var(--ok)' :
+    accent === 'warn' ? 'var(--warn)' :
+    accent === 'mute' ? 'var(--fg-dim)' :
+                        'var(--fg)'
   return (
-    <div>
-      <p className="text-[10px] text-[var(--fg-mute)] uppercase tracking-wider">{label}</p>
-      <p className="text-[22px] font-bold tabular-nums leading-tight mt-0.5" style={{ color: c, letterSpacing: '-0.02em' }}>{value}</p>
+    <div
+      className="rounded-md px-3 py-2.5 text-center min-w-[80px]"
+      style={{ background: 'var(--surface-2)', border: '1px solid var(--hairline)' }}
+    >
+      <p className="text-[9.5px] font-bold uppercase tracking-wider text-[var(--fg-mute)]">{label}</p>
+      <p className={`tabular-nums font-bold ${thin ? 'text-[16px]' : 'text-[20px]'} leading-tight mt-0.5`} style={{ color: c, letterSpacing: '-0.02em' }}>
+        {value}
+      </p>
     </div>
   )
 }
 
-function QuickLink({ href, icon, label }: { href: string; icon: React.ReactNode; label: string }) {
+function JumpRow({ href, icon, label, desc }: { href: string; icon: React.ReactNode; label: string; desc: string }) {
   return (
     <Link
       href={href}
-      className="px-3 py-2.5 rounded-md inline-flex items-center gap-2 text-[12.5px] font-medium border transition-colors hover:border-[var(--hairline-2)]"
-      style={{ background: 'var(--surface-2)', borderColor: 'var(--hairline)' }}
+      className="flex items-center gap-3 px-2.5 py-2 rounded-md hover:bg-[var(--surface-2)] transition-colors group"
     >
-      <span style={{ color: 'var(--brand)' }}>{icon}</span>
-      {label}
+      <span className="w-7 h-7 rounded-md flex items-center justify-center shrink-0"
+        style={{ background: 'var(--brand-faint)', color: 'var(--brand)' }}>
+        {icon}
+      </span>
+      <div className="flex-1 min-w-0">
+        <p className="text-[13px] font-medium leading-tight">{label}</p>
+        <p className="text-[11px] text-[var(--fg-mute)] leading-tight">{desc}</p>
+      </div>
+      <ChevronRight size={12} className="text-[var(--fg-mute)] opacity-0 group-hover:opacity-100 transition-opacity" />
     </Link>
   )
 }
