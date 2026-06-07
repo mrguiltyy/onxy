@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { ArrowRight, ShieldCheck, Cpu, Code2, Sparkles, Boxes, RefreshCw, Star, Check, Zap, Headphones, Activity, Lock } from 'lucide-react'
+import { ArrowRight, ShieldCheck, Cpu, Zap, Activity, RefreshCw, Lock, Star, Check, Crown, Store, User as UserIcon, Sparkles } from 'lucide-react'
 import { supabaseServer, supabaseAdmin } from '@/lib/supabase/server'
 import { Brand, BrandRow } from '@/components/Brand'
 import { formatPrice, relativeTime } from '@/lib/utils'
@@ -32,17 +32,14 @@ export default async function HomePage() {
   const supa = await supabaseServer()
   const { data: { user } } = await supa.auth.getUser()
   const signedIn = !!user
-
   const admin = supabaseAdmin()
 
-  // Live stats — pulled fresh on every render
   const [{ count: usersCount }, { count: licsCount }, { count: activeLicsCount }] = await Promise.all([
     admin.from('profiles').select('id', { count: 'exact', head: true }),
     admin.from('licenses').select('id', { count: 'exact', head: true }),
     admin.from('licenses').select('id', { count: 'exact', head: true }).eq('status', 'active'),
   ])
 
-  // Featured products (up to 4)
   const { data: prodsRaw } = await admin
     .from('products')
     .select('id, slug, name, tagline, image_url, version, price_lifetime, features, featured')
@@ -50,25 +47,22 @@ export default async function HomePage() {
     .order('featured', { ascending: false })
     .order('sort_order', { ascending: true })
     .order('created_at', { ascending: false })
-    .limit(4)
+    .limit(3)
   const featured = (prodsRaw as FeaturedProduct[] | null) ?? []
 
-  // Latest 4 product updates as "activity"
   const { data: updsRaw } = await admin
     .from('product_updates')
     .select('product_id, version, title, severity, created_at')
     .order('created_at', { ascending: false })
-    .limit(4)
+    .limit(3)
   const updates = (updsRaw as UpdateRow[] | null) ?? []
 
-  // Live status indicator
   const { data: incidents } = await admin
     .from('status_incidents')
     .select('status')
     .neq('status', 'resolved')
   const allOk = !incidents || (incidents as IncidentRow[]).length === 0
 
-  // Build product name map for updates feed
   const updateProductMap = new Map<string, string>()
   if (updates.length) {
     const ids = [...new Set(updates.map(u => u.product_id))]
@@ -78,30 +72,32 @@ export default async function HomePage() {
 
   return (
     <div className="min-h-screen flex flex-col">
-      {/* Header */}
+
+      {/* ─── HEADER ─────────────────────────────────────────────── */}
       <header
         className="sticky top-0 z-40 border-b"
         style={{
-          background: 'rgba(10,13,20,0.80)',
+          background: 'rgba(10,13,20,0.78)',
           borderColor: 'var(--hairline)',
-          backdropFilter: 'blur(14px) saturate(180%)',
+          backdropFilter: 'blur(16px) saturate(180%)',
         }}
       >
-        <div className="container-x flex items-center justify-between py-3">
+        <div className="container-x flex items-center justify-between py-3.5">
           <BrandRow />
-          <nav className="hidden md:flex items-center gap-5">
-            <Link href="/products" className="text-[13.5px] text-[var(--fg-dim)] hover:text-[var(--fg)]">Products</Link>
-            <Link href="/status"   className="text-[13.5px] text-[var(--fg-dim)] hover:text-[var(--fg)]">Status</Link>
-            <Link href="/faq"      className="text-[13.5px] text-[var(--fg-dim)] hover:text-[var(--fg)]">FAQ</Link>
-            <Link href="/products" className="text-[13.5px] text-[var(--fg-dim)] hover:text-[var(--fg)]">For Resellers</Link>
+          <nav className="hidden md:flex items-center gap-7">
+            <Link href="/products" className="text-[13px] text-[var(--fg-dim)] hover:text-[var(--fg)] transition-colors">Products</Link>
+            <Link href="/reseller" className="text-[13px] text-[var(--fg-dim)] hover:text-[var(--fg)] transition-colors">Reseller</Link>
+            <Link href="/blog"     className="text-[13px] text-[var(--fg-dim)] hover:text-[var(--fg)] transition-colors">Blog</Link>
+            <Link href="/faq"      className="text-[13px] text-[var(--fg-dim)] hover:text-[var(--fg)] transition-colors">FAQ</Link>
+            <Link href="/status"   className="text-[13px] text-[var(--fg-dim)] hover:text-[var(--fg)] transition-colors">Status</Link>
           </nav>
           <div className="flex items-center gap-2">
             {signedIn ? (
-              <Link href="/dashboard" className="btn btn-primary btn-sm">Open dashboard <ArrowRight size={12} /></Link>
+              <Link href="/dashboard" className="btn btn-primary btn-sm">Dashboard <ArrowRight size={12} /></Link>
             ) : (
               <>
-                <Link href="/login"    className="text-[13.5px] text-[var(--fg-dim)] hover:text-[var(--fg)]">Sign in</Link>
-                <Link href="/register" className="btn btn-primary btn-sm">Sign up</Link>
+                <Link href="/login"    className="text-[13px] text-[var(--fg-dim)] hover:text-[var(--fg)] px-2">Sign in</Link>
+                <Link href="/register" className="btn btn-primary btn-sm">Get started</Link>
               </>
             )}
           </div>
@@ -110,280 +106,242 @@ export default async function HomePage() {
 
       <main className="flex-1">
 
-        {/* ── Hero ───────────────────────────────────────────── */}
+        {/* ─── HERO ──────────────────────────────────────────────── */}
         <section className="relative overflow-hidden">
-          {/* Atmosphere */}
           <div
             className="absolute inset-0 pointer-events-none"
             style={{
               background:
-                'radial-gradient(ellipse 1100px 600px at 30% -10%, rgba(240,164,183,0.10), transparent 60%),' +
-                'radial-gradient(ellipse 900px 600px at 80% 20%, rgba(162,200,238,0.10), transparent 65%)',
+                'radial-gradient(ellipse 900px 500px at 25% 10%, rgba(240,164,183,0.10), transparent 60%),' +
+                'radial-gradient(ellipse 700px 500px at 80% 60%, rgba(162,200,238,0.10), transparent 65%)',
             }}
           />
-          <div className="container-x relative pt-16 md:pt-24 pb-16">
-            <Link
-              href="/status"
-              className="inline-flex items-center gap-2 px-3 py-1 rounded-full border text-[11.5px] font-medium mb-8 transition-colors hover:text-[var(--fg)]"
-              style={{
-                background: allOk ? 'rgba(34,197,94,0.05)' : 'rgba(239,68,68,0.05)',
-                borderColor: allOk ? 'rgba(34,197,94,0.20)' : 'rgba(239,68,68,0.20)',
-                color: allOk ? 'var(--ok)' : 'var(--bad)',
-              }}
-            >
-              <span className="w-1.5 h-1.5 rounded-full" style={{
-                background: allOk ? 'var(--ok)' : 'var(--bad)',
-                boxShadow: `0 0 8px ${allOk ? 'rgba(34,197,94,0.6)' : 'rgba(239,68,68,0.6)'}`,
-              }} />
-              {allOk ? 'All systems operational' : 'Active incident — see status'}
-            </Link>
+          <div className="container-x relative pt-20 md:pt-28 pb-24">
+            <div className="max-w-[820px]">
+              <Link
+                href="/status"
+                className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-[11.5px] font-medium mb-8 transition-colors"
+                style={{
+                  background: allOk ? 'rgba(34,197,94,0.06)' : 'rgba(239,68,68,0.06)',
+                  border:     `1px solid ${allOk ? 'rgba(34,197,94,0.20)' : 'rgba(239,68,68,0.20)'}`,
+                  color:      allOk ? 'var(--ok)' : 'var(--bad)',
+                }}
+              >
+                <span
+                  className="w-1.5 h-1.5 rounded-full"
+                  style={{
+                    background: allOk ? 'var(--ok)' : 'var(--bad)',
+                    boxShadow:  `0 0 8px ${allOk ? 'rgba(34,197,94,0.6)' : 'rgba(239,68,68,0.6)'}`,
+                  }}
+                />
+                {allOk ? 'All systems operational' : 'Active incident — see status'}
+              </Link>
 
-            <div className="grid grid-cols-1 lg:grid-cols-[1.1fr_1fr] gap-12 items-center">
-              {/* Left: pitch */}
-              <div>
-                <h1 className="text-[44px] md:text-[60px] font-bold tracking-tight leading-[1.02] mb-6" style={{ letterSpacing: '-0.035em' }}>
-                  Private tools, sold &amp; resold,<br/>
-                  <span style={{
+              <h1
+                className="text-[48px] md:text-[64px] font-bold tracking-tight leading-[1.02] mb-7"
+                style={{ letterSpacing: '-0.035em' }}
+              >
+                Private tools, sold the way they{' '}
+                <span
+                  style={{
                     background: 'var(--brand-gradient)',
                     WebkitBackgroundClip: 'text',
-                    WebkitTextFillColor: 'transparent',
                     backgroundClip: 'text',
-                  }}>without the panel mess.</span>
-                </h1>
+                    WebkitTextFillColor: 'transparent',
+                  }}
+                >should be.</span>
+              </h1>
 
-                <p className="text-[15.5px] text-[var(--fg-dim)] leading-relaxed max-w-[560px] mb-8">
-                  OP is a marketplace and auth engine in one. Buy lifetime tools with HWID-bound keys.
-                  Or get reseller access and white-label our catalog with your branding — at wholesale.
-                  Auth, licensing, and updates handled for you.
-                </p>
+              <p className="text-[16px] md:text-[17px] text-[var(--fg-dim)] leading-relaxed mb-9 max-w-[620px]">
+                OP is a marketplace and license engine in one. Buy lifetime tools with HWID-bound keys.
+                Become a reseller and white-label our catalog. Or embed our auth API in your own apps —
+                seven SDKs, ten lines of code.
+              </p>
 
-                <div className="flex items-center gap-3 flex-wrap mb-6">
-                  <Link href="/products" className="btn btn-primary">
-                    Browse products <ArrowRight size={13} />
-                  </Link>
-                  {!signedIn && (
-                    <Link href="/register" className="btn btn-secondary">
-                      Create free account
-                    </Link>
-                  )}
-                </div>
-
-                <p className="text-[11.5px] text-[var(--fg-mute)]">
-                  Educational use only · Cancel anytime · No card required to browse
-                </p>
-              </div>
-
-              {/* Right: stat tiles */}
-              <div className="grid grid-cols-2 gap-3">
-                <StatTile label="Users"       value={(usersCount ?? 0).toLocaleString()} icon={<ShieldCheck size={13} />} />
-                <StatTile label="Licenses"    value={(licsCount ?? 0).toLocaleString()}  icon={<Lock size={13} />} />
-                <StatTile label="Active keys" value={(activeLicsCount ?? 0).toLocaleString()} icon={<Activity size={13} />} accent="ok" />
-                <StatTile label="Uptime"      value="99.9%" icon={<Zap size={13} />} accent="brand" />
-
-                <div className="col-span-2 card p-5">
-                  <div className="flex items-center gap-2 mb-3">
-                    <span className="w-7 h-7 rounded-md flex items-center justify-center" style={{ background: 'var(--brand-faint)', color: 'var(--brand)' }}>
-                      <RefreshCw size={13} />
-                    </span>
-                    <p className="font-semibold text-[13px]">Latest releases</p>
-                  </div>
-                  <div className="space-y-1.5">
-                    {updates.length === 0 ? (
-                      <p className="text-[12px] text-[var(--fg-mute)]">No releases yet.</p>
-                    ) : updates.map(u => (
-                      <div key={u.product_id + u.version} className="flex items-center gap-2 text-[12px]">
-                        <code className="font-mono text-[var(--brand)] shrink-0">v{u.version}</code>
-                        <span className="text-[var(--fg-dim)] truncate flex-1">{updateProductMap.get(u.product_id) ?? '—'} · {u.title}</span>
-                        <span className="text-[var(--fg-mute)] text-[10.5px] shrink-0">{relativeTime(u.created_at)}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* ── Featured products ──────────────────────────────── */}
-        {featured.length > 0 && (
-          <section className="py-16 border-t" style={{ borderColor: 'var(--hairline)' }}>
-            <div className="container-x">
-              <div className="flex items-end justify-between mb-8">
-                <div>
-                  <p className="label-mono mb-2">Catalog</p>
-                  <h2 className="text-[28px] md:text-[34px] font-bold tracking-tight" style={{ letterSpacing: '-0.025em' }}>
-                    Featured tools
-                  </h2>
-                </div>
-                <Link href="/products" className="text-[13px] text-[var(--brand)] hover:underline inline-flex items-center gap-1">
-                  View all <ArrowRight size={11} />
+              <div className="flex items-center gap-3 flex-wrap mb-5">
+                <Link href="/products" className="btn btn-primary">
+                  Browse products <ArrowRight size={14} />
                 </Link>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                {featured.map(p => (
-                  <Link
-                    key={p.id}
-                    href={`/products/${p.slug}`}
-                    className="card card-hover overflow-hidden flex flex-col group"
-                  >
-                    <div
-                      className="h-28 relative"
-                      style={{
-                        background: p.image_url
-                          ? `url(${p.image_url}) center/cover`
-                          : 'linear-gradient(135deg, rgba(240,164,183,0.20), rgba(162,200,238,0.20))',
-                        borderBottom: '1px solid var(--hairline)',
-                      }}
-                    >
-                      {p.featured && (
-                        <span className="absolute top-2 left-2 text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded"
-                          style={{ background: 'var(--brand-gradient)', color: '#3a2630' }}>
-                          <Star size={8} className="inline mr-1" /> Featured
-                        </span>
-                      )}
-                    </div>
-                    <div className="p-4 flex-1 flex flex-col">
-                      <div className="flex items-center gap-2 mb-1">
-                        <p className="font-semibold text-[13.5px] truncate flex-1">{p.name}</p>
-                        <span className="text-[9.5px] text-[var(--fg-mute)] font-mono">v{p.version}</span>
-                      </div>
-                      {p.tagline && <p className="text-[11.5px] text-[var(--fg-dim)] line-clamp-2 mb-3">{p.tagline}</p>}
-                      <div className="mt-auto pt-2 flex items-end justify-between border-t" style={{ borderColor: 'var(--hairline)' }}>
-                        {p.price_lifetime !== null && p.price_lifetime !== undefined ? (
-                          <span className="text-[14px] font-bold tabular-nums">{formatPrice(p.price_lifetime)}</span>
-                        ) : <span />}
-                        <span className="text-[11px] text-[var(--brand)] inline-flex items-center gap-1 group-hover:gap-2 transition-all">
-                          View <ArrowRight size={9} />
-                        </span>
-                      </div>
-                    </div>
+                {!signedIn && (
+                  <Link href="/register" className="btn btn-secondary">
+                    Create free account
                   </Link>
-                ))}
+                )}
+                {signedIn && (
+                  <Link href="/dashboard" className="btn btn-secondary">
+                    Open dashboard
+                  </Link>
+                )}
               </div>
-            </div>
-          </section>
-        )}
 
-        {/* ── How it works ───────────────────────────────────── */}
-        <section className="py-20 border-t" style={{ borderColor: 'var(--hairline)' }}>
-          <div className="container-x">
-            <div className="mb-10 max-w-[640px]">
-              <p className="label-mono mb-2">How it works</p>
-              <h2 className="text-[28px] md:text-[34px] font-bold tracking-tight mb-3" style={{ letterSpacing: '-0.025em' }}>
-                From signup to running tool in 60 seconds.
-              </h2>
-              <p className="text-[14.5px] text-[var(--fg-dim)] leading-relaxed">
-                We handle auth, HWID binding, license validation, updates, and customer support automation.
-                You focus on the tool.
+              <p className="text-[12px] text-[var(--fg-mute)]">
+                Educational use only · No card needed to browse · Cancel anytime
               </p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <Step n="01" title="Sign up" body="Free account in 30 seconds. Email or Discord — no credit card to browse the catalog." />
-              <Step n="02" title="Buy or generate a key" body="Pick a tool, pick a tier (1 day to lifetime), pay. Your key is delivered instantly and shown in your dashboard." />
-              <Step n="03" title="Run the tool" body="First launch binds the key to your hardware. Auto-update, lifetime support, self-serve HWID resets if you swap PCs." />
+            {/* Inline stats strip */}
+            <div className="mt-16 pt-10 border-t flex items-center justify-between flex-wrap gap-6"
+              style={{ borderColor: 'var(--hairline)' }}>
+              <Metric label="Users"        value={(usersCount ?? 0).toLocaleString()} />
+              <Metric label="Licenses"     value={(licsCount ?? 0).toLocaleString()} />
+              <Metric label="Active keys"  value={(activeLicsCount ?? 0).toLocaleString()} accent="ok" />
+              <Metric label="Uptime"       value="99.9%" />
+              <Metric label="SDK languages" value="7" />
             </div>
           </div>
         </section>
 
-        {/* ── For resellers ──────────────────────────────────── */}
-        <section className="py-20 border-t relative overflow-hidden" style={{ borderColor: 'var(--hairline)' }}>
-          <div className="absolute inset-0 pointer-events-none" style={{
-            background: 'radial-gradient(ellipse 800px 400px at 80% 50%, rgba(240,164,183,0.08), transparent 60%)',
-          }} />
-          <div className="container-x relative">
-            <div className="grid grid-cols-1 lg:grid-cols-[1fr_1fr] gap-12 items-center">
-              <div>
-                <p className="label-mono mb-3">For resellers</p>
-                <h2 className="text-[28px] md:text-[34px] font-bold tracking-tight mb-4" style={{ letterSpacing: '-0.025em' }}>
-                  White-label our catalog.
-                  Or run your own auth.
-                </h2>
-                <p className="text-[14.5px] text-[var(--fg-dim)] leading-relaxed mb-6 max-w-[520px]">
-                  Two reseller paths. Pick either or both — they stack.
-                </p>
 
-                <div className="space-y-3 mb-7">
-                  <BenefitRow icon={<Boxes size={13} />} title="Resell our tools" body="Apply to white-label any product. Pay wholesale, set your own branding, get notified instantly when we ship an update." />
-                  <BenefitRow icon={<Code2 size={13} />} title="Auth for your tools" body="Drop-in SDK for C# · C++ · Python · Node · Java · VB.NET. HWID + heartbeat + bans, in 10 lines of code." />
-                  <BenefitRow icon={<Headphones size={13} />} title="Lifetime support for buyers" body="Customers who buy lifetime get priority support — auto-flagged in our queue." />
-                </div>
-
-                <div className="flex gap-3">
-                  <Link href="/products" className="btn btn-primary">
-                    Browse to resell <ArrowRight size={13} />
-                  </Link>
-                  <Link href={signedIn ? '/dashboard/docs' : '/register?intent=reseller'} className="btn btn-secondary">
-                    See auth docs
-                  </Link>
-                </div>
-              </div>
-
-              {/* Mock code panel */}
-              <div className="card overflow-hidden">
-                <div className="px-4 py-2.5 border-b border-[var(--hairline)] flex items-center gap-2 text-[11px] font-mono text-[var(--fg-mute)]">
-                  <span className="w-2 h-2 rounded-full bg-[var(--bad)]" />
-                  <span className="w-2 h-2 rounded-full bg-[var(--warn)]" />
-                  <span className="w-2 h-2 rounded-full bg-[var(--ok)]" />
-                  <span className="ml-2">OPAuth.cs · 10 lines</span>
-                </div>
-                <pre className="p-4 text-[11.5px] leading-[1.7] overflow-x-auto" style={{
-                  background: 'var(--surface-2)',
-                  fontFamily: 'ui-monospace, SF Mono, Menlo, Consolas, monospace',
-                }}>
-<code>{`var auth = new OPAuth(
-    appId:     "op_a8f...",
-    appSecret: "ops_xxx...",
-    version:   "1.0.0"
-);
-
-var result = await auth.LoginAsync(keyFromUser);
-if (!result.Success) return Shutdown(result.Message);
-
-auth.StartHeartbeat(TimeSpan.FromSeconds(60),
-    onInvalidated: () => Application.Exit());
-`}</code>
-                </pre>
-              </div>
-            </div>
+        {/* ─── THREE TIERS ────────────────────────────────────────── */}
+        <Section
+          eyebrow="Three ways to use OP"
+          title="Buy a tool, resell our catalog, or run your own panel."
+          description="Pick the tier that matches where you are. Upgrade anytime — everything stacks."
+        >
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+            <TierCard
+              icon={<UserIcon size={16} />}
+              tier="Customer"
+              price="Free to start"
+              tagline="Buy a key, run the tool."
+              features={[
+                'Browse the catalog free',
+                'Lifetime or subscription keys',
+                'HWID locked, self-serve resets',
+                'In-app diagnostics & troubleshooter',
+              ]}
+              cta="Browse products"
+              ctaHref="/products"
+            />
+            <TierCard
+              icon={<Store size={16} />}
+              tier="Reseller"
+              price="from $14.99/mo"
+              tagline="Sell our tools with your branding."
+              features={[
+                'Wholesale pricing per key',
+                'White-label any product',
+                'Use auth engine for your own apps',
+                'Update notifications via Discord',
+              ]}
+              cta="See reseller plans"
+              ctaHref="/reseller"
+              featured
+            />
+            <TierCard
+              icon={<Crown size={16} />}
+              tier="Rebrand"
+              price="Contact us"
+              tagline="Run your own mini-OP."
+              features={[
+                'Your own subdomain',
+                'Your own users + products',
+                'Your own admin panel',
+                'Branded end-to-end',
+              ]}
+              cta="Coming soon"
+              ctaHref="/blog/welcome-to-op"
+            />
           </div>
-        </section>
+        </Section>
 
-        {/* ── Why OP ─────────────────────────────────────────── */}
-        <section className="py-20 border-t" style={{ borderColor: 'var(--hairline)' }}>
+
+        {/* ─── FEATURED PRODUCTS ──────────────────────────────────── */}
+        {featured.length > 0 && (
+          <Section
+            eyebrow="Catalog"
+            title="Featured tools"
+            description="A sample of what's live. Every tool ships with our auth engine baked in."
+            link={{ label: 'View all products', href: '/products' }}
+          >
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+              {featured.map(p => <ProductCard key={p.id} p={p} />)}
+            </div>
+          </Section>
+        )}
+
+
+        {/* ─── HOW IT WORKS ───────────────────────────────────────── */}
+        <Section
+          eyebrow="How it works"
+          title="From signup to running tool in 60 seconds."
+          description="No salespeople. No demos. Just click and go."
+        >
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+            <Step n="01" title="Sign up"
+              body="Email or Discord. Free, 30 seconds. Linking Discord adds $1 to your wallet automatically." />
+            <Step n="02" title="Pick a tier"
+              body="Buy a key, generate as a reseller at wholesale, or embed our auth in your own tool." />
+            <Step n="03" title="Ship"
+              body="Keys are delivered instantly. The tool checks HWID + heartbeat for as long as it runs." />
+          </div>
+        </Section>
+
+
+        {/* ─── WHY OP ─────────────────────────────────────────────── */}
+        <Section
+          eyebrow="Why OP"
+          title="Built for tools that need to ship, scale, and stay alive."
+          description=""
+        >
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <Feature icon={<Cpu size={14} />}         title="HWID-bound"            body="Every license locks to one machine on first login. Constant-time HWID compare, 3 self-serve resets." />
+            <Feature icon={<Zap size={14} />}         title="Brute-force-proof"     body="Per-IP + per-app sliding-window throttle. 10 fails / minute → 5-minute block." />
+            <Feature icon={<Activity size={14} />}    title="Live heartbeat"        body="Tool calls /heartbeat every 60s. Banned users get kicked instantly — no waiting." />
+            <Feature icon={<Sparkles size={14} />}    title="Self-serve support"    body="Auto-troubleshooter fixes 80% of issues without opening a ticket." />
+            <Feature icon={<RefreshCw size={14} />}   title="Auto-update fan-out"   body="Publish a release → every approved reseller of that product gets notified instantly." />
+            <Feature icon={<Lock size={14} />}        title="App secrets hashed"    body="SHA-256 in the DB. Even our admins can't recover them — only rotate them." />
+          </div>
+        </Section>
+
+
+        {/* ─── LATEST UPDATES ─────────────────────────────────────── */}
+        {updates.length > 0 && (
+          <Section
+            eyebrow="What's shipped recently"
+            title="Recent releases"
+            description="We ship constantly. Resellers get notified the second a release lands."
+            link={{ label: 'See blog', href: '/blog' }}
+          >
+            <div className="card divide-y" style={{ borderColor: 'var(--hairline)' }}>
+              {updates.map(u => (
+                <div key={u.product_id + u.version} className="px-5 py-4 flex items-center justify-between gap-4">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <code className="font-mono text-[12px] text-[var(--brand)] shrink-0">v{u.version}</code>
+                    <p className="text-[13.5px] truncate">
+                      <strong>{updateProductMap.get(u.product_id) ?? '—'}</strong>
+                      <span className="text-[var(--fg-dim)] mx-1.5">·</span>
+                      <span className="text-[var(--fg-dim)]">{u.title}</span>
+                    </p>
+                  </div>
+                  <span className="text-[11px] text-[var(--fg-mute)] shrink-0">{relativeTime(u.created_at)}</span>
+                </div>
+              ))}
+            </div>
+          </Section>
+        )}
+
+
+        {/* ─── FINAL CTA ─────────────────────────────────────────── */}
+        <section className="py-24 border-t" style={{ borderColor: 'var(--hairline)' }}>
           <div className="container-x">
-            <p className="label-mono mb-2">Why OP</p>
-            <h2 className="text-[28px] md:text-[34px] font-bold tracking-tight mb-10 max-w-[640px]" style={{ letterSpacing: '-0.025em' }}>
-              Built for tools that need to ship, scale, and stay alive.
-            </h2>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <Feature icon={<Cpu size={14} />} title="HWID-bound" body="Every license is locked to one machine on first login. Constant-time HWID compare. Self-serve resets when you swap hardware." />
-              <Feature icon={<Zap size={14} />} title="Brute-force-proof" body="Per-IP + per-app sliding window throttle. 10 fails / minute triggers a 5-minute block. No tickets needed." />
-              <Feature icon={<Activity size={14} />} title="Live heartbeat" body="Tool calls /heartbeat every 60s. We can kick banned users instantly — no waiting for re-login." />
-              <Feature icon={<Sparkles size={14} />} title="Self-serve support" body="Troubleshooter wizard fixes 80% of issues — HWID resets, invalid keys, rate limits — without opening a ticket." />
-              <Feature icon={<RefreshCw size={14} />} title="Auto-update notifications" body="Publish a release → every approved reseller of that product gets a notification instantly." />
-              <Feature icon={<ShieldCheck size={14} />} title="App secrets hashed" body="Secrets are SHA-256 hashed in the database. Even our admins can't recover them. Rotate any time from your dashboard." />
-            </div>
-          </div>
-        </section>
-
-        {/* ── Final CTA ──────────────────────────────────────── */}
-        <section className="py-20 border-t" style={{ borderColor: 'var(--hairline)' }}>
-          <div className="container-x">
-            <div className="card overflow-hidden text-center" style={{
-              padding: '64px 24px',
-              background: 'linear-gradient(135deg, rgba(240,164,183,0.06), rgba(162,200,238,0.06))',
-            }}>
-              <Brand size="md" className="mx-auto mb-6 flex justify-center" />
+            <div
+              className="rounded-2xl py-16 px-6 text-center max-w-[760px] mx-auto"
+              style={{
+                background:
+                  'radial-gradient(ellipse 800px 400px at center 0%, rgba(240,164,183,0.08), transparent 60%),' +
+                  'var(--surface)',
+                border: '1px solid var(--hairline)',
+              }}
+            >
+              <Brand size="md" href={undefined} className="mx-auto mb-6 flex justify-center" />
               <h2 className="text-[28px] md:text-[36px] font-bold tracking-tight mb-3" style={{ letterSpacing: '-0.025em' }}>
-                {signedIn ? 'Pick up where you left off.' : 'Get started in 30 seconds.'}
+                {signedIn ? 'Welcome back.' : 'Ready in 30 seconds.'}
               </h2>
-              <p className="text-[14.5px] text-[var(--fg-dim)] mb-7 max-w-[480px] mx-auto leading-relaxed">
+              <p className="text-[14.5px] text-[var(--fg-dim)] mb-7 max-w-[440px] mx-auto leading-relaxed">
                 {signedIn
                   ? 'Your dashboard, licenses, and resells are waiting.'
-                  : 'Free account. Browse the catalog, generate test keys, and try the auth engine — no card required to get started.'}
+                  : 'Free to start. Browse the catalog, link Discord for $1, try the SDK — no card required.'}
               </p>
               <div className="flex items-center justify-center gap-3 flex-wrap">
                 {signedIn ? (
@@ -391,7 +349,7 @@ auth.StartHeartbeat(TimeSpan.FromSeconds(60),
                 ) : (
                   <>
                     <Link href="/register" className="btn btn-primary">Create account <ArrowRight size={13} /></Link>
-                    <Link href="/products"  className="btn btn-secondary">Browse first</Link>
+                    <Link href="/products"  className="btn btn-secondary">Browse products</Link>
                   </>
                 )}
               </div>
@@ -400,36 +358,41 @@ auth.StartHeartbeat(TimeSpan.FromSeconds(60),
         </section>
       </main>
 
-      {/* Footer */}
-      <footer className="py-10 border-t" style={{ borderColor: 'var(--hairline)' }}>
+      {/* ─── FOOTER ───────────────────────────────────────────── */}
+      <footer className="py-12 border-t" style={{ borderColor: 'var(--hairline)' }}>
         <div className="container-x">
-          <div className="flex items-start justify-between gap-6 flex-wrap mb-6">
-            <div>
+          <div className="flex items-start justify-between flex-wrap gap-8 mb-8">
+            <div className="max-w-[280px]">
               <BrandRow />
-              <p className="text-[12px] text-[var(--fg-mute)] mt-2 max-w-[280px]">
+              <p className="text-[12.5px] text-[var(--fg-mute)] mt-3 leading-relaxed">
                 Marketplace + auth engine for private tools. Educational use only.
               </p>
             </div>
-            <div className="grid grid-cols-3 gap-x-10 gap-y-1.5">
-              <FooterCol title="Platform" links={[
-                { href: '/products', label: 'Products' },
-                { href: '/status',   label: 'Status' },
-                { href: signedIn ? '/dashboard/docs' : '/register', label: 'Docs' },
+
+            <div className="grid grid-cols-3 gap-x-12 gap-y-1.5 text-[12.5px]">
+              <FooterCol title="Platform" items={[
+                ['Products', '/products'],
+                ['Reseller', '/reseller'],
+                ['Status',   '/status'],
+                ['Docs',     signedIn ? '/dashboard/docs' : '/register'],
               ]} />
-              <FooterCol title="Support" links={[
-                { href: '/faq',                       label: 'FAQ' },
-                { href: signedIn ? '/dashboard/troubleshoot' : '/login', label: 'Troubleshoot' },
-                { href: signedIn ? '/dashboard/tickets'     : '/login', label: 'Tickets' },
+              <FooterCol title="Resources" items={[
+                ['Blog', '/blog'],
+                ['FAQ',  '/faq'],
+                ['Sign in', '/login'],
+                ['Get started', '/register'],
               ]} />
-              <FooterCol title="Legal" links={[
-                { href: '/terms',   label: 'Terms' },
-                { href: '/privacy', label: 'Privacy' },
+              <FooterCol title="Legal" items={[
+                ['Terms',   '/terms'],
+                ['Privacy', '/privacy'],
               ]} />
             </div>
           </div>
-          <div className="border-t pt-4 flex items-center justify-between text-[11px] text-[var(--fg-mute)] flex-wrap gap-2" style={{ borderColor: 'var(--hairline)' }}>
-            <p>© {new Date().getFullYear()} OP. All rights reserved.</p>
-            <p>Educational use only · Buyer assumes all responsibility for tool usage</p>
+
+          <div className="pt-6 border-t flex items-center justify-between flex-wrap gap-3 text-[11px] text-[var(--fg-mute)]"
+            style={{ borderColor: 'var(--hairline)' }}>
+            <p>© {new Date().getFullYear()} OP · All rights reserved</p>
+            <p>Educational use only · Buyer assumes all responsibility</p>
           </div>
         </div>
       </footer>
@@ -437,45 +400,145 @@ auth.StartHeartbeat(TimeSpan.FromSeconds(60),
   )
 }
 
-// ────────────────────────────────────────────────────────────────
-// Helpers
-// ────────────────────────────────────────────────────────────────
-function StatTile({ label, value, icon, accent = 'brand' }: { label: string; value: string; icon: React.ReactNode; accent?: 'brand' | 'ok' }) {
-  const c = accent === 'ok'
-    ? { bg: 'rgba(34,197,94,0.08)', fg: 'var(--ok)' }
-    : { bg: 'var(--brand-faint)',   fg: 'var(--brand)' }
+
+/* ──────────────────────────────────────────────────────────────────
+   Reusable Section wrapper — same eyebrow / title / description / link
+   pattern for EVERY major section so the page reads as one piece.
+   ────────────────────────────────────────────────────────────────── */
+function Section({ eyebrow, title, description, link, children }: {
+  eyebrow:     string
+  title:       string
+  description: string
+  link?:       { label: string; href: string }
+  children:    React.ReactNode
+}) {
   return (
-    <div className="card p-4">
-      <div className="flex items-center justify-between mb-2">
-        <span className="w-7 h-7 rounded-md flex items-center justify-center" style={{ background: c.bg, color: c.fg }}>{icon}</span>
-        <span className="text-[10px] text-[var(--fg-mute)] uppercase tracking-wider">{label}</span>
+    <section className="py-24 border-t" style={{ borderColor: 'var(--hairline)' }}>
+      <div className="container-x">
+        <header className="flex items-end justify-between gap-6 mb-10 flex-wrap">
+          <div className="max-w-[640px]">
+            <p className="label-mono mb-3">{eyebrow}</p>
+            <h2 className="text-[28px] md:text-[34px] font-bold tracking-tight mb-2" style={{ letterSpacing: '-0.025em' }}>
+              {title}
+            </h2>
+            {description && <p className="text-[14px] text-[var(--fg-dim)] leading-relaxed">{description}</p>}
+          </div>
+          {link && (
+            <Link href={link.href} className="text-[13px] text-[var(--brand)] hover:underline inline-flex items-center gap-1 shrink-0">
+              {link.label} <ArrowRight size={11} />
+            </Link>
+          )}
+        </header>
+        {children}
       </div>
-      <p className="text-[22px] font-bold tabular-nums" style={{ letterSpacing: '-0.02em' }}>{value}</p>
+    </section>
+  )
+}
+
+
+/* ─── Sub-components ─────────────────────────────────────────────── */
+function Metric({ label, value, accent = 'fg' }: { label: string; value: string; accent?: 'fg' | 'ok' }) {
+  return (
+    <div>
+      <p className="text-[10.5px] font-mono uppercase tracking-wider text-[var(--fg-mute)] mb-1">{label}</p>
+      <p className="text-[26px] font-bold tabular-nums leading-none"
+        style={{ color: accent === 'ok' ? 'var(--ok)' : 'var(--fg)', letterSpacing: '-0.02em' }}>
+        {value}
+      </p>
     </div>
+  )
+}
+
+function TierCard({ icon, tier, price, tagline, features, cta, ctaHref, featured }: {
+  icon: React.ReactNode; tier: string; price: string; tagline: string; features: string[]; cta: string; ctaHref: string; featured?: boolean;
+}) {
+  return (
+    <div
+      className="card p-6 flex flex-col relative overflow-hidden"
+      style={featured ? { boxShadow: '0 0 0 1px rgba(240,164,183,0.40), 0 20px 40px rgba(240,164,183,0.08)' } : undefined}
+    >
+      {featured && (
+        <span className="absolute top-0 left-1/2 -translate-x-1/2 text-[9.5px] font-bold uppercase tracking-wider px-2 py-1 rounded-b"
+          style={{ background: 'var(--brand-gradient)', color: '#3a2630' }}>
+          ★ Most popular
+        </span>
+      )}
+
+      <div className="flex items-center gap-2 mb-3 mt-2">
+        <span className="w-8 h-8 rounded-md flex items-center justify-center"
+          style={{ background: 'var(--brand-faint)', color: 'var(--brand)' }}>
+          {icon}
+        </span>
+        <p className="font-bold text-[15px] tracking-tight">{tier}</p>
+      </div>
+
+      <p className="text-[13.5px] text-[var(--fg-dim)] mb-5 leading-relaxed">{tagline}</p>
+
+      <p className="text-[20px] font-bold tabular-nums mb-5" style={{ letterSpacing: '-0.02em' }}>{price}</p>
+
+      <ul className="space-y-2 mb-7 flex-1">
+        {features.map((f, i) => (
+          <li key={i} className="flex items-start gap-2 text-[13px] text-[var(--fg-dim)]">
+            <span className="w-4 h-4 rounded flex items-center justify-center mt-0.5 shrink-0"
+              style={{ background: 'var(--brand-faint)', color: 'var(--brand)' }}>
+              <Check size={9} />
+            </span>
+            {f}
+          </li>
+        ))}
+      </ul>
+
+      <Link href={ctaHref} className={`btn ${featured ? 'btn-primary' : 'btn-secondary'} w-full mt-auto`}>
+        {cta} <ArrowRight size={13} />
+      </Link>
+    </div>
+  )
+}
+
+function ProductCard({ p }: { p: FeaturedProduct }) {
+  return (
+    <Link href={`/products/${p.slug}`} className="card card-hover overflow-hidden flex flex-col group">
+      <div
+        className="h-32 relative"
+        style={{
+          background: p.image_url
+            ? `url(${p.image_url}) center/cover`
+            : 'linear-gradient(135deg, rgba(240,164,183,0.20), rgba(162,200,238,0.20))',
+          borderBottom: '1px solid var(--hairline)',
+        }}
+      >
+        {p.featured && (
+          <span className="absolute top-3 left-3 text-[9.5px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded inline-flex items-center gap-1"
+            style={{ background: 'var(--brand-gradient)', color: '#3a2630' }}>
+            <Star size={9} /> Featured
+          </span>
+        )}
+      </div>
+      <div className="p-5 flex-1 flex flex-col">
+        <div className="flex items-center gap-2 mb-1">
+          <p className="font-semibold text-[14.5px] truncate flex-1">{p.name}</p>
+          <span className="text-[10px] font-mono text-[var(--fg-mute)]">v{p.version}</span>
+        </div>
+        {p.tagline && <p className="text-[12.5px] text-[var(--fg-dim)] line-clamp-2 leading-relaxed mb-4">{p.tagline}</p>}
+        <div className="mt-auto pt-3 border-t flex items-end justify-between" style={{ borderColor: 'var(--hairline)' }}>
+          {p.price_lifetime != null
+            ? <span className="text-[18px] font-bold tabular-nums" style={{ letterSpacing: '-0.02em' }}>{formatPrice(p.price_lifetime)}</span>
+            : <span />}
+          <span className="text-[12px] text-[var(--brand)] inline-flex items-center gap-1 group-hover:gap-2 transition-all">
+            View <ArrowRight size={10} />
+          </span>
+        </div>
+      </div>
+    </Link>
   )
 }
 
 function Step({ n, title, body }: { n: string; title: string; body: string }) {
   return (
     <div className="card p-6">
-      <p className="label-mono mb-3">{n}</p>
-      <h3 className="font-semibold text-[16px] mb-2">{title}</h3>
+      <p className="label-mono mb-4">{n}</p>
+      <h3 className="font-semibold text-[16.5px] mb-2 tracking-tight">{title}</h3>
       <p className="text-[13px] text-[var(--fg-dim)] leading-relaxed">{body}</p>
-    </div>
-  )
-}
-
-function BenefitRow({ icon, title, body }: { icon: React.ReactNode; title: string; body: string }) {
-  return (
-    <div className="flex items-start gap-3">
-      <span className="w-7 h-7 rounded-md flex items-center justify-center shrink-0 mt-0.5"
-        style={{ background: 'var(--brand-faint)', color: 'var(--brand)' }}>
-        {icon}
-      </span>
-      <div>
-        <p className="font-semibold text-[13.5px] mb-0.5">{title}</p>
-        <p className="text-[12.5px] text-[var(--fg-dim)] leading-relaxed">{body}</p>
-      </div>
     </div>
   )
 }
@@ -483,23 +546,23 @@ function BenefitRow({ icon, title, body }: { icon: React.ReactNode; title: strin
 function Feature({ icon, title, body }: { icon: React.ReactNode; title: string; body: string }) {
   return (
     <div className="card p-5">
-      <span className="w-8 h-8 rounded-md flex items-center justify-center mb-3"
+      <span className="w-9 h-9 rounded-md flex items-center justify-center mb-3"
         style={{ background: 'var(--brand-faint)', color: 'var(--brand)' }}>
         {icon}
       </span>
-      <h3 className="font-semibold text-[14px] mb-1">{title}</h3>
+      <h3 className="font-semibold text-[14.5px] mb-1.5 tracking-tight">{title}</h3>
       <p className="text-[12.5px] text-[var(--fg-dim)] leading-relaxed">{body}</p>
     </div>
   )
 }
 
-function FooterCol({ title, links }: { title: string; links: { href: string; label: string }[] }) {
+function FooterCol({ title, items }: { title: string; items: [string, string][] }) {
   return (
     <div>
-      <p className="font-semibold text-[12px] uppercase tracking-wider text-[var(--fg-mute)] mb-2">{title}</p>
-      {links.map(l => (
-        <Link key={l.href + l.label} href={l.href} className="block text-[12.5px] text-[var(--fg-dim)] hover:text-[var(--fg)] py-0.5">
-          {l.label}
+      <p className="font-semibold text-[11px] uppercase tracking-wider text-[var(--fg-mute)] mb-2.5">{title}</p>
+      {items.map(([label, href]) => (
+        <Link key={label} href={href} className="block text-[var(--fg-dim)] hover:text-[var(--fg)] py-1 transition-colors">
+          {label}
         </Link>
       ))}
     </div>

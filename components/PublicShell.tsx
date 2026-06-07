@@ -28,7 +28,7 @@ export function PublicShell({ children, wide = false }: { children: React.ReactN
         </div>
       </header>
 
-      <main className="flex-1 py-12">
+      <main className="flex-1 py-16 md:py-20">
         <div className={`container-x ${wide ? 'max-w-[1180px]' : 'max-w-[760px]'}`}>
           {children}
         </div>
