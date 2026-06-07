@@ -8,6 +8,7 @@ interface Profile {
   username:      string
   balance_cents: number
   role:          string
+  avatar_url?:   string | null
 }
 
 interface Announcement {
@@ -24,7 +25,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   const { data: profileRaw } = await supabase
     .from('profiles')
-    .select('username, balance_cents, role')
+    .select('username, balance_cents, role, avatar_url')
     .eq('id', user.id)
     .single()
 
@@ -70,6 +71,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
         balanceCents={Number(profile?.balance_cents ?? 0)}
         isAdmin={isAdmin}
         canManageApps={canManageApps}
+        avatarUrl={profile?.avatar_url ?? null}
         notifications={notifications}
         unreadCount={unreadCount ?? 0}
       />

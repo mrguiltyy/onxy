@@ -71,9 +71,9 @@ function Form() {
         setLoading(false)
         return
       }
-      // If email confirmations are off, user is logged in immediately
+      // If email confirmations are off, user is logged in immediately — go to onboarding
       if (data.session) {
-        window.location.assign(next)
+        window.location.assign('/onboarding')
         return
       }
       setDone(true)

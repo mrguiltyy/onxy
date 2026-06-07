@@ -16,6 +16,7 @@ interface TopbarProps {
   balanceCents: number
   isAdmin?: boolean
   canManageApps?: boolean
+  avatarUrl?: string | null
   notifications?: Notif[]
   unreadCount?:   number
 }
@@ -36,7 +37,7 @@ const resellerTabs = [
   { href: '/dashboard/docs',         icon: BookOpen, label: 'Docs'         },
 ]
 
-export function Topbar({ username, balanceCents, isAdmin, canManageApps, notifications = [], unreadCount = 0 }: TopbarProps) {
+export function Topbar({ username, balanceCents, isAdmin, canManageApps, avatarUrl, notifications = [], unreadCount = 0 }: TopbarProps) {
   const pathname = usePathname()
   const tabs = canManageApps
     ? [...baseTabs.slice(0, 4), ...resellerTabs, ...baseTabs.slice(4)]
@@ -109,13 +110,13 @@ export function Topbar({ username, balanceCents, isAdmin, canManageApps, notific
               className="flex items-center gap-2 rounded-md px-2.5 py-1.5 border border-[var(--hairline)] hover:bg-[var(--surface-2)] hover:border-[var(--hairline-2)] transition-colors"
             >
               <div
-                className="w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-bold"
+                className="w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-bold overflow-hidden"
                 style={{
-                  background: 'var(--brand-gradient)',
+                  background: avatarUrl ? `url(${avatarUrl}) center/cover` : 'var(--brand-gradient)',
                   color: '#3a2630',
                 }}
               >
-                {username[0]?.toUpperCase() ?? 'U'}
+                {!avatarUrl && (username[0]?.toUpperCase() ?? 'U')}
               </div>
               <span className="text-[13px] text-[var(--fg)] hidden sm:inline">{username}</span>
               <ChevronDown size={13} className="text-[var(--fg-mute)]" />

@@ -18,6 +18,20 @@ export async function GET(request: NextRequest) {
   // Check if this is a Discord sign-in/link — if so, attempt to grant the
   // $1 first-link bonus (idempotent via grant_discord_credit RPC).
   const { data: { user } } = await supabase.auth.getUser()
+
+  // Check if user needs onboarding (first signup, not yet onboarded)
+  let needsOnboarding = false
+  if (user) {
+    const admin = supabaseAdmin()
+    const { data: profRaw } = await admin
+      .from('profiles')
+      .select('onboarded_at')
+      .eq('id', user.id)
+      .maybeSingle()
+    const profile = profRaw as { onboarded_at: string | null } | null
+    needsOnboarding = !profile?.onboarded_at
+  }
+
   if (user && user.app_metadata?.provider === 'discord' && user.user_metadata) {
     const discord_id       = user.user_metadata.provider_id ?? user.user_metadata.sub
     const discord_username = user.user_metadata.full_name ?? user.user_metadata.name ?? user.user_metadata.user_name
@@ -43,5 +57,7 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  return NextResponse.redirect(`${origin}${next}`)
+  // Send first-time users to /onboarding (unless they explicitly requested a different next)
+  const redirectTarget = needsOnboarding && next === '/dashboard' ? '/onboarding' : next
+  return NextResponse.redirect(`${origin}${redirectTarget}`)
 }
