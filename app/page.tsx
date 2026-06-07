@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { ArrowRight, ShieldCheck, Cpu, Zap, Activity, RefreshCw, Lock, Star, Check, Crown, Store, User as UserIcon, Sparkles } from 'lucide-react'
+import { ArrowRight, Cpu, Zap, Activity, RefreshCw, Lock, Star, Check, Crown, Store, User as UserIcon, Sparkles } from 'lucide-react'
 import { supabaseServer, supabaseAdmin } from '@/lib/supabase/server'
 import { Brand, BrandRow } from '@/components/Brand'
 import { formatPrice, relativeTime } from '@/lib/utils'
@@ -120,21 +120,19 @@ export default async function HomePage() {
             <div className="max-w-[820px]">
               <Link
                 href="/status"
-                className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-[11.5px] font-medium mb-8 transition-colors"
+                className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md text-[11.5px] font-medium mb-8 transition-colors"
                 style={{
-                  background: allOk ? 'rgba(34,197,94,0.06)' : 'rgba(239,68,68,0.06)',
-                  border:     `1px solid ${allOk ? 'rgba(34,197,94,0.20)' : 'rgba(239,68,68,0.20)'}`,
-                  color:      allOk ? 'var(--ok)' : 'var(--bad)',
+                  background: 'var(--surface-2)',
+                  border:     '1px solid var(--hairline)',
+                  color:      'var(--fg-dim)',
                 }}
               >
-                <span
-                  className="w-1.5 h-1.5 rounded-full"
-                  style={{
-                    background: allOk ? 'var(--ok)' : 'var(--bad)',
-                    boxShadow:  `0 0 8px ${allOk ? 'rgba(34,197,94,0.6)' : 'rgba(239,68,68,0.6)'}`,
-                  }}
-                />
-                {allOk ? 'All systems operational' : 'Active incident — see status'}
+                {allOk ? <Check size={11} className="text-[var(--ok)]" /> : <Activity size={11} className="text-[var(--bad)]" />}
+                <span style={{ color: allOk ? 'var(--ok)' : 'var(--bad)' }}>
+                  {allOk ? 'All systems operational' : 'Active incident'}
+                </span>
+                <span className="text-[var(--fg-mute)]">·</span>
+                <span>System status</span>
               </Link>
 
               <h1

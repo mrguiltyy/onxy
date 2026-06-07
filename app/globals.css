@@ -273,15 +273,9 @@ body {
   border-bottom-color: var(--brand);
 }
 
-/* ── Online/offline dot ──────────────────────────────────────── */
-.dot {
-  display: inline-block;
-  width: 6px;
-  height: 6px;
-  border-radius: 999px;
-}
-.dot-ok   { background: var(--ok);   box-shadow: 0 0 6px var(--ok); }
-.dot-bad  { background: var(--bad);  box-shadow: 0 0 6px var(--bad); }
+/* (Removed glowing status dots — the pulse / glow read as AI-generated.
+   Use the Check / AlertTriangle icons from lucide-react for status badges,
+   or a small thin vertical bar `<span class="w-0.5 h-7" />` for activity rows.) */
 
 /* ── Animations ──────────────────────────────────────────────── */
 @keyframes fade-up {
@@ -496,11 +490,6 @@ body {
   left: 0.5rem;
   right: 0.5rem;
   opacity: 0.5;
-}
-
-/* ── Status dot (no animation — the pulse was the AI tell) ── */
-.dot-ok {
-  background: var(--ok);
 }
 
 /* ── Brand wordmark — used in emails & static contexts ──────── */

@@ -60,7 +60,6 @@ export function DiscordButton({ label = 'Continue with Discord', credit = true }
       </button>
       {credit && (
         <p className="text-[10.5px] text-[var(--fg-mute)] text-center">
-          <span className="inline-block w-1.5 h-1.5 rounded-full mr-1" style={{ background: 'var(--ok)' }} />
           Earn <strong className="text-[var(--ok)]">$1.00 wallet credit</strong> on first link
         </p>
       )}

@@ -212,7 +212,7 @@ export default async function DashboardPage() {
                     'var(--brand)'
                   return (
                     <div key={a.id} className="px-5 py-3 flex items-center gap-3 hover:bg-[var(--surface-2)] transition-colors">
-                      <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: color, boxShadow: `0 0 6px ${color}50` }} />
+                      <span className="w-0.5 h-7 rounded-sm shrink-0" style={{ background: color }} />
                       <div className="flex-1 min-w-0">
                         <p className="text-[13px] font-medium capitalize">{a.event_type.replace(/_/g, ' ')}</p>
                         {a.target_label && <p className="text-[11px] text-[var(--fg-dim)] font-mono truncate">{a.target_label}</p>}

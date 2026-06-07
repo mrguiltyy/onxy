@@ -88,19 +88,12 @@ export default async function StatusPage() {
       {/* Hero */}
       <div className="mb-10">
         <p className="label-mono mb-2">System status</p>
-        <div className="flex items-center gap-3 mb-2 flex-wrap">
-          <h1 className="text-[32px] md:text-[40px] font-bold tracking-tight" style={{ letterSpacing: '-0.025em' }}>
+        <h1 className="text-[32px] md:text-[40px] font-bold tracking-tight flex items-center gap-3 flex-wrap" style={{ letterSpacing: '-0.025em' }}>
+          <span style={{ color: overallOk ? 'var(--fg)' : 'var(--bad)' }}>
             {overallOk ? 'All systems operational' : 'Active incident'}
-          </h1>
-          <span
-            className="w-3 h-3 rounded-full mt-2"
-            style={{
-              background: overallOk ? 'var(--ok)' : 'var(--bad)',
-              boxShadow: `0 0 16px ${overallOk ? 'rgba(34,197,94,0.5)' : 'rgba(239,68,68,0.5)'}`,
-            }}
-          />
-        </div>
-        <p className="text-[13.5px] text-[var(--fg-dim)]">
+          </span>
+        </h1>
+        <p className="text-[13.5px] text-[var(--fg-dim)] mt-2">
           Live monitoring of every OP service. Probes run every minute via cron. Updated continuously.
         </p>
 
@@ -160,7 +153,7 @@ export default async function StatusPage() {
                 className="card px-5 py-4 flex items-center gap-4"
               >
                 <span
-                  className="w-1.5 h-1.5 rounded-full shrink-0"
+                  className="w-1 h-12 rounded-full shrink-0"
                   style={{
                     background:
                       i.status === 'resolved' ? 'var(--ok)' :
