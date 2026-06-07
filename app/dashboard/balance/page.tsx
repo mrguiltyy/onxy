@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/Input'
 import { supabaseBrowser } from '@/lib/supabase/client'
 import { formatPrice, relativeTime } from '@/lib/utils'
 import { StripeTopupCard } from './StripeTopupCard'
+import { CryptoTopupCard } from './CryptoTopupCard'
 
 interface Tx {
   id: string
@@ -116,7 +117,7 @@ export default function BalancePage() {
     <div className="animate-in">
       <h1 className="text-[22px] font-bold tracking-tight mb-6">Top-up Balance</h1>
 
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
         {/* Balance card */}
         <div className="card p-5">
           <p className="label-mono mb-3">Top-up Balance</p>
@@ -135,6 +136,9 @@ export default function BalancePage() {
         <Suspense fallback={null}>
           <StripeTopupCard />
         </Suspense>
+
+        {/* Crypto top-up */}
+        <CryptoTopupCard />
 
         {/* Redeem */}
         <div className="card p-5">
