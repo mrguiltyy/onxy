@@ -15,9 +15,9 @@ interface Profile {
   balance_cents:      number
   parent_id:          string
   role:               string
-  tier:               string
-  two_factor_enabled: boolean
-  avatar_url:         string | null
+  tier?:              string
+  two_factor_enabled?: boolean
+  avatar_url?:        string | null
   created_at:         string
 }
 interface License { id: string; product: string; key_prefix: string; status: string; expires_at: string | null; created_at: string }
@@ -28,12 +28,26 @@ export default async function DashboardPage() {
   const supabase = await supabaseServer()
   const { data: { user } } = await supabase.auth.getUser()
 
-  const { data: profileRaw } = await supabase
+  // Base columns (always exist). Then try to merge in onboarding extras.
+  const { data: baseRaw } = await supabase
     .from('profiles')
-    .select('username, email, balance_cents, parent_id, role, tier, two_factor_enabled, avatar_url, created_at')
+    .select('username, email, balance_cents, parent_id, role, created_at')
     .eq('id', user!.id)
-    .single()
-  const profile = (profileRaw ?? null) as Profile | null
+    .maybeSingle()
+
+  // Onboarding columns are optional — only present if onboarding.sql has been run.
+  // We try once; if it fails (column doesn't exist), defaults are used.
+  let extras: { tier?: string; two_factor_enabled?: boolean; avatar_url?: string | null } = {}
+  try {
+    const { data: extRaw, error: extErr } = await supabase
+      .from('profiles')
+      .select('tier, two_factor_enabled, avatar_url')
+      .eq('id', user!.id)
+      .maybeSingle()
+    if (!extErr && extRaw) extras = extRaw as typeof extras
+  } catch { /* columns don't exist yet — onboarding.sql not run */ }
+
+  const profile = (baseRaw ? { ...baseRaw, ...extras } : null) as Profile | null
 
   const [licsRes, actsRes, annsRes] = await Promise.all([
     supabase.from('licenses')

@@ -19,17 +19,22 @@ export async function GET(request: NextRequest) {
   // $1 first-link bonus (idempotent via grant_discord_credit RPC).
   const { data: { user } } = await supabase.auth.getUser()
 
-  // Check if user needs onboarding (first signup, not yet onboarded)
+  // Check if user needs onboarding (first signup, not yet onboarded).
+  // Tolerant of missing column (if onboarding.sql hasn't been run yet).
   let needsOnboarding = false
   if (user) {
     const admin = supabaseAdmin()
-    const { data: profRaw } = await admin
-      .from('profiles')
-      .select('onboarded_at')
-      .eq('id', user.id)
-      .maybeSingle()
-    const profile = profRaw as { onboarded_at: string | null } | null
-    needsOnboarding = !profile?.onboarded_at
+    try {
+      const { data: profRaw, error: profErr } = await admin
+        .from('profiles')
+        .select('onboarded_at')
+        .eq('id', user.id)
+        .maybeSingle()
+      if (!profErr && profRaw) {
+        const profile = profRaw as { onboarded_at: string | null }
+        needsOnboarding = !profile.onboarded_at
+      }
+    } catch { /* column doesn't exist yet — onboarding.sql not run */ }
   }
 
   if (user && user.app_metadata?.provider === 'discord' && user.user_metadata) {

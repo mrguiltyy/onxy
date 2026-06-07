@@ -23,13 +23,24 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  const { data: profileRaw } = await supabase
+  // Base columns (guaranteed). The avatar_url is optional — added by onboarding.sql.
+  const { data: baseRaw } = await supabase
     .from('profiles')
-    .select('username, balance_cents, role, avatar_url')
+    .select('username, balance_cents, role')
     .eq('id', user.id)
-    .single()
+    .maybeSingle()
 
-  const profile = (profileRaw ?? null) as Profile | null
+  let avatarUrl: string | null = null
+  try {
+    const { data: extRaw, error: extErr } = await supabase
+      .from('profiles')
+      .select('avatar_url')
+      .eq('id', user.id)
+      .maybeSingle()
+    if (!extErr && extRaw) avatarUrl = (extRaw as { avatar_url: string | null }).avatar_url
+  } catch { /* column doesn't exist yet */ }
+
+  const profile = (baseRaw ? { ...baseRaw, avatar_url: avatarUrl } : null) as Profile | null
 
   // Notifications — last 10 for the bell dropdown, plus unread count
   const { data: notifsRaw } = await supabase

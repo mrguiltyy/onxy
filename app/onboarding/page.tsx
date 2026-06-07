@@ -24,13 +24,28 @@ export default async function OnboardingPage({ searchParams }: { searchParams: P
   const { data: { user } } = await supa.auth.getUser()
   if (!user) redirect('/login?next=/onboarding')
 
-  const { data: profRaw } = await supa
+  // Base columns from clean-install (always exist)
+  const { data: baseRaw } = await supa
     .from('profiles')
-    .select('username, email, avatar_url, banner_url, bio, profile_public, onboarded_at, two_factor_enabled, tier, created_at')
+    .select('username, email, created_at')
     .eq('id', user.id)
     .maybeSingle()
-  const profile = profRaw as Profile | null
-  if (!profile) redirect('/login')
+  if (!baseRaw) redirect('/login')
+
+  // Try to read onboarding columns. If onboarding.sql hasn't been run, we
+  // gracefully proceed with empty defaults — the wizard still works, it just
+  // won't be able to persist until the SQL has run.
+  let ext: Partial<Profile> = {}
+  try {
+    const { data: extRaw, error: extErr } = await supa
+      .from('profiles')
+      .select('avatar_url, banner_url, bio, profile_public, onboarded_at, two_factor_enabled, tier')
+      .eq('id', user.id)
+      .maybeSingle()
+    if (!extErr && extRaw) ext = extRaw as Partial<Profile>
+  } catch { /* onboarding.sql not run */ }
+
+  const profile = { ...baseRaw, ...ext } as Profile
 
   // If already onboarded and not forced via ?skip=0, go to dashboard
   if (profile.onboarded_at && params.skip !== '0') {
