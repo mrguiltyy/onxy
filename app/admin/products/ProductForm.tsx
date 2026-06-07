@@ -3,6 +3,7 @@ import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { Loader2, Save, Settings2, Tag, Palette, Search, Code, Boxes, Calendar, Infinity as InfinityIcon } from 'lucide-react'
 import { createProduct, updateProduct } from './actions'
+import { ImagePicker } from './ImagePicker'
 
 interface InitialProduct {
   id?:                      string
@@ -84,6 +85,7 @@ export function ProductForm({ initial = {} }: { initial?: InitialProduct }) {
   const router = useRouter()
   const [pending, start] = useTransition()
   const [error, setError] = useState<string | null>(null)
+  const [imageUrl, setImageUrl] = useState(initial.image_url ?? '')
   const isEdit = !!initial.id
 
   const dollars = (cents: number | null | undefined) =>
@@ -177,8 +179,10 @@ export function ProductForm({ initial = {} }: { initial?: InitialProduct }) {
 
       {/* ── MEDIA ───────────────────────────────────────────── */}
       <Section title="Media" icon={<Boxes size={13} />}>
-        <Field label="Hero image URL" hint="Used as card banner and product page hero.">
-          <input name="image_url" defaultValue={initial.image_url ?? ''} placeholder="https://..." className="form-input" />
+        <Field label="Hero image" hint="Shown on cards + at the top of the product page (16:9 recommended).">
+          {/* Hidden input so the form submits the URL with the rest of the fields */}
+          <input type="hidden" name="image_url" value={imageUrl} />
+          <ImagePicker value={imageUrl} onChange={setImageUrl} />
         </Field>
         <Field label="Gallery URLs (one per line)" hint="Extra screenshots shown below the hero.">
           <textarea name="gallery_urls" rows={3} defaultValue={(initial.gallery_urls ?? []).join('\n')} className="form-input resize-none font-mono text-[12.5px]"
