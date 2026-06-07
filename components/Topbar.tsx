@@ -3,7 +3,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { LayoutDashboard, KeyRound, Plus, Wallet, User, ChevronDown, MessageSquare, Shield, Boxes, BookOpen, Store, LifeBuoy } from 'lucide-react'
 import { cn, formatPrice } from '@/lib/utils'
-import { BrandRow } from './Brand'
+import { Logo } from './Logo'
 import { NotificationBell } from './NotificationBell'
 import { UserMenu } from './UserMenu'
 import { ProjectSelector } from './ProjectSelector'
@@ -61,7 +61,7 @@ export function Topbar({ username, email, balanceCents, isAdmin, canManageApps, 
 
           {/* Brand */}
           <div className="py-3 shrink-0">
-            <BrandRow href="/dashboard" />
+            <Logo size="sm" href="/dashboard" />
           </div>
 
           {/* Project picker (resellers + admins; just visual for now) */}

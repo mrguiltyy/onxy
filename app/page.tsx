@@ -1,7 +1,8 @@
 import Link from 'next/link'
 import { ArrowRight, Cpu, Zap, Activity, RefreshCw, Lock, Star, Check, Crown, Store, User as UserIcon, Sparkles } from 'lucide-react'
 import { supabaseServer, supabaseAdmin } from '@/lib/supabase/server'
-import { Brand, BrandRow } from '@/components/Brand'
+import { Brand } from '@/components/Brand'
+import { Logo } from '@/components/Logo'
 import { formatPrice, relativeTime } from '@/lib/utils'
 
 export const dynamic = 'force-dynamic'
@@ -61,29 +62,55 @@ export default async function HomePage() {
 
       {/* ─── HEADER ─────────────────────────────────────────────── */}
       <header
-        className="sticky top-0 z-40 border-b"
+        className="sticky top-0 z-40"
         style={{
-          background: 'rgba(10,13,20,0.78)',
-          borderColor: 'var(--hairline)',
-          backdropFilter: 'blur(16px) saturate(180%)',
+          background: 'rgba(10,13,20,0.72)',
+          backdropFilter: 'blur(18px) saturate(180%)',
+          WebkitBackdropFilter: 'blur(18px) saturate(180%)',
+          borderBottom: '1px solid rgba(42,49,66,0.6)',
         }}
       >
-        <div className="container-x flex items-center justify-between py-3.5">
-          <BrandRow />
-          <nav className="hidden md:flex items-center gap-7">
-            <Link href="/products" className="text-[13px] text-[var(--fg-dim)] hover:text-[var(--fg)] transition-colors">Products</Link>
-            <Link href="/reseller" className="text-[13px] text-[var(--fg-dim)] hover:text-[var(--fg)] transition-colors">Reseller</Link>
-            <Link href="/blog"     className="text-[13px] text-[var(--fg-dim)] hover:text-[var(--fg)] transition-colors">Blog</Link>
-            <Link href="/faq"      className="text-[13px] text-[var(--fg-dim)] hover:text-[var(--fg)] transition-colors">FAQ</Link>
-            <Link href="/status"   className="text-[13px] text-[var(--fg-dim)] hover:text-[var(--fg)] transition-colors">Status</Link>
+        <div className="container-x flex items-center justify-between py-3.5 gap-6">
+          <Logo size="sm" />
+          <nav className="hidden md:flex items-center gap-1 flex-1 justify-center">
+            <NavLink href="/products" label="Products" />
+            <NavLink href="/reseller" label="Reseller" />
+            <NavLink href="/rebrand"  label="Rebrand" />
+            <NavLink href="/blog"     label="Blog" />
+            <NavLink href="/faq"      label="FAQ" />
           </nav>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 shrink-0">
             {signedIn ? (
-              <Link href="/dashboard" className="btn btn-primary btn-sm">Dashboard <ArrowRight size={12} /></Link>
+              <Link
+                href="/dashboard"
+                className="inline-flex items-center gap-1.5 px-4 py-1.5 text-[13px] font-semibold rounded-full transition-all hover:shadow-[0_8px_24px_rgba(240,164,183,0.32)]"
+                style={{
+                  background: 'linear-gradient(135deg, #f0a4b7 0%, #c5b3df 50%, #a2c8ee 100%)',
+                  color: '#1a0e14',
+                  border: '1px solid rgba(255,255,255,0.10)',
+                }}
+              >
+                Dashboard <ArrowRight size={12} />
+              </Link>
             ) : (
               <>
-                <Link href="/login"    className="text-[13px] text-[var(--fg-dim)] hover:text-[var(--fg)] px-2">Sign in</Link>
-                <Link href="/register" className="btn btn-primary btn-sm">Get started</Link>
+                <Link
+                  href="/login"
+                  className="px-3.5 py-1.5 text-[13px] font-medium rounded-full transition-colors text-[var(--fg-dim)] hover:text-[var(--fg)] hover:bg-[var(--surface-2)]"
+                >
+                  Sign in
+                </Link>
+                <Link
+                  href="/register"
+                  className="inline-flex items-center gap-1.5 px-4 py-1.5 text-[13px] font-semibold rounded-full transition-all hover:shadow-[0_8px_24px_rgba(240,164,183,0.32)]"
+                  style={{
+                    background: 'linear-gradient(135deg, #f0a4b7 0%, #c5b3df 50%, #a2c8ee 100%)',
+                    color: '#1a0e14',
+                    border: '1px solid rgba(255,255,255,0.10)',
+                  }}
+                >
+                  Get started <ArrowRight size={12} />
+                </Link>
               </>
             )}
           </div>
@@ -320,7 +347,7 @@ export default async function HomePage() {
         <div className="container-x">
           <div className="flex items-start justify-between flex-wrap gap-8 mb-8">
             <div className="max-w-[280px]">
-              <BrandRow />
+              <Logo size="sm" />
               <p className="text-[12.5px] text-[var(--fg-mute)] mt-3 leading-relaxed">
                 Marketplace + auth engine for private tools. Educational use only.
               </p>
@@ -394,6 +421,17 @@ function Section({ eyebrow, title, description, link, children }: {
 
 
 /* ─── Sub-components ─────────────────────────────────────────────── */
+function NavLink({ href, label }: { href: string; label: string }) {
+  return (
+    <Link
+      href={href}
+      className="px-3.5 py-1.5 text-[13px] font-medium rounded-full transition-all text-[var(--fg-dim)] hover:text-[var(--fg)] hover:bg-[var(--surface-2)]"
+    >
+      {label}
+    </Link>
+  )
+}
+
 function TierCard({ icon, tier, price, tagline, features, cta, ctaHref, featured }: {
   icon: React.ReactNode; tier: string; price: string; tagline: string; features: string[]; cta: string; ctaHref: string; featured?: boolean;
 }) {
