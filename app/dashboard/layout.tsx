@@ -3,6 +3,7 @@ import { supabaseServer } from '@/lib/supabase/server'
 import { Topbar } from '@/components/Topbar'
 import { AnnouncementBar } from '@/components/AnnouncementBar'
 import { AntiInspect } from '@/components/AntiInspect'
+import { HelpBubble } from '@/components/HelpBubble'
 
 interface Profile {
   username:      string
@@ -79,6 +80,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
       <AntiInspect />
       <Topbar
         username={profile?.username ?? user.email?.split('@')[0] ?? 'User'}
+        email={user.email ?? ''}
         balanceCents={Number(profile?.balance_cents ?? 0)}
         isAdmin={isAdmin}
         canManageApps={canManageApps}
@@ -99,6 +101,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
           {children}
         </div>
       </main>
+      <HelpBubble />
     </div>
   )
 }

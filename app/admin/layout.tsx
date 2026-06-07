@@ -31,6 +31,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       <AntiInspect />
       <Topbar
         username={profile.username}
+        email={user.email ?? ''}
         balanceCents={Number(profile.balance_cents)}
         isAdmin
       />

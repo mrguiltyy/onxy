@@ -1,56 +1,104 @@
 import Link from 'next/link'
-import { LogOut, User as UserIcon, Mail, Wallet, Hash, Store, ArrowRight, ShieldCheck } from 'lucide-react'
+import { LogOut, User as UserIcon, Mail, Wallet, Hash, Store, ArrowRight, ShieldCheck, Bell, KeyRound } from 'lucide-react'
 import { supabaseServer } from '@/lib/supabase/server'
 import { formatPrice, formatDate } from '@/lib/utils'
+import { Pill } from '@/components/ui/Pill'
+import { LinkDiscordSection } from './LinkDiscordSection'
+
+export const dynamic = 'force-dynamic'
 
 interface Profile {
-  username:      string
-  email:         string
-  balance_cents: number
-  role:          string
-  parent_id:     string
-  created_at:    string
+  username:              string
+  email:                 string
+  balance_cents:         number
+  role:                  string
+  parent_id:             string
+  created_at:            string
+  discord_id?:           string | null
+  discord_username?:     string | null
+  discord_credit_given?: boolean
+  avatar_url?:           string | null
 }
 
 export default async function AccountPage() {
   const supabase = await supabaseServer()
   const { data: { user } } = await supabase.auth.getUser()
 
-  const { data: profileRaw } = await supabase
+  // Base columns
+  const { data: baseRaw } = await supabase
     .from('profiles')
     .select('username, email, balance_cents, role, parent_id, created_at')
     .eq('id', user!.id)
-    .single()
+    .maybeSingle()
 
-  const profile = (profileRaw ?? null) as Profile | null
+  // Optional extended columns
+  let extras: Partial<Profile> = {}
+  try {
+    const { data: extRaw, error: extErr } = await supabase
+      .from('profiles')
+      .select('discord_id, discord_username, discord_credit_given, avatar_url')
+      .eq('id', user!.id)
+      .maybeSingle()
+    if (!extErr && extRaw) extras = extRaw as Partial<Profile>
+  } catch {}
+
+  const profile = (baseRaw ? { ...baseRaw, ...extras } : null) as Profile | null
 
   return (
-    <div className="animate-in max-w-[640px]">
-      <h1 className="text-[22px] font-bold tracking-tight mb-6">Account</h1>
+    <div className="animate-in max-w-[720px]">
+      <div className="mb-6">
+        <p className="label-mono mb-2">Account</p>
+        <h1 className="text-[24px] font-bold tracking-tight">Profile &amp; settings</h1>
+        <p className="text-[13px] text-[var(--fg-dim)] mt-1">Manage your identity, wallet, integrations, and session.</p>
+      </div>
 
+      {/* Identity */}
       <div className="card p-6 mb-5">
-        <div className="flex items-center gap-4 pb-5 mb-5 border-b border-[var(--hairline)]">
+        <div className="flex items-center gap-4 pb-5 mb-5 border-b" style={{ borderColor: 'var(--hairline)' }}>
           <div
-            className="w-14 h-14 rounded-md flex items-center justify-center text-white text-[20px] font-bold"
-            style={{ background: 'linear-gradient(135deg, var(--brand), var(--brand-hover))' }}
+            className="w-14 h-14 rounded-full flex items-center justify-center text-[22px] font-bold overflow-hidden shrink-0"
+            style={{
+              background: profile?.avatar_url ? `url(${profile.avatar_url}) center/cover` : 'var(--brand-gradient)',
+              color: '#3a2630',
+            }}
           >
-            {(profile?.username ?? 'U')[0].toUpperCase()}
+            {!profile?.avatar_url && (profile?.username ?? 'U')[0].toUpperCase()}
           </div>
-          <div className="flex-1">
-            <h2 className="text-[17px] font-bold">{profile?.username}</h2>
-            <p className="text-[12.5px] text-[var(--fg-dim)]">{profile?.email}</p>
+          <div className="flex-1 min-w-0">
+            <h2 className="text-[18px] font-bold truncate">{profile?.username}</h2>
+            <p className="text-[12.5px] text-[var(--fg-dim)] truncate font-mono">{profile?.email}</p>
           </div>
-          <span className="pill pill-brand">{profile?.role ?? 'user'}</span>
+          <RoleBadge role={profile?.role ?? 'user'} />
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
-          <Row icon={<UserIcon size={13} />} label="Username"   value={profile?.username ?? '—'} />
-          <Row icon={<Mail     size={13} />} label="Email"      value={profile?.email ?? '—'} />
-          <Row icon={<Wallet   size={13} />} label="Balance"    value={formatPrice(profile?.balance_cents ?? 0)} accent="ok" />
-          <Row icon={<Hash     size={13} />} label="Parent ID"  value={profile?.parent_id ?? '#1'} />
-          <Row icon={<Hash     size={13} />} label="Member since" value={profile?.created_at ? formatDate(profile.created_at) : '—'} />
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+          <Row icon={<UserIcon size={11} />} label="Username" value={profile?.username ?? '—'} />
+          <Row icon={<Mail size={11} />} label="Email" value={profile?.email ?? '—'} />
+          <Row icon={<Hash size={11} />} label="Member since" value={profile?.created_at ? formatDate(profile.created_at) : '—'} />
+          <Row icon={<Wallet size={11} />} label="Balance" value={formatPrice(profile?.balance_cents ?? 0)} accent="ok" />
+          <Row icon={<Hash size={11} />} label="Parent ID" value={profile?.parent_id ?? '#1'} />
+          <Row icon={<KeyRound size={11} />} label="Account ID" value={(user!.id.slice(0, 8))} mono />
+        </div>
+
+        <div className="mt-5 pt-5 border-t flex items-center gap-3 flex-wrap" style={{ borderColor: 'var(--hairline)' }}>
+          <Link href="/onboarding?skip=0" className="btn btn-secondary btn-sm">
+            Edit profile <ArrowRight size={11} />
+          </Link>
+          <Link href="/dashboard/balance" className="btn btn-secondary btn-sm">
+            Top-up wallet <Wallet size={11} />
+          </Link>
+          <Link href="/dashboard/notifications" className="btn btn-secondary btn-sm">
+            Notifications <Bell size={11} />
+          </Link>
         </div>
       </div>
+
+      {/* Discord link section */}
+      <LinkDiscordSection
+        linked={!!profile?.discord_id}
+        username={profile?.discord_username ?? null}
+        creditGiven={!!profile?.discord_credit_given}
+      />
 
       {/* Reseller upsell — only show to regular users */}
       {profile?.role === 'user' && (
@@ -92,13 +140,17 @@ export default async function AccountPage() {
         </div>
       )}
 
+      {/* Sign out */}
       <div className="card p-6">
-        <h2 className="font-semibold mb-1">Sign out</h2>
-        <p className="text-[13px] text-[var(--fg-dim)] mb-4">End your session on this device.</p>
+        <h2 className="font-semibold mb-1">Sign out of OP</h2>
+        <p className="text-[13px] text-[var(--fg-dim)] mb-4">End your session on this device. You can sign back in anytime.</p>
         <form action="/auth/signout" method="POST">
-          <button type="submit" className="btn btn-danger">
-            <LogOut size={14} />
-            Sign out
+          <button type="submit" className="btn btn-sm" style={{
+            background: 'rgba(239,68,68,0.08)',
+            color: 'var(--bad)',
+            border: '1px solid rgba(239,68,68,0.25)',
+          }}>
+            <LogOut size={13} /> Sign out
           </button>
         </form>
       </div>
@@ -106,14 +158,21 @@ export default async function AccountPage() {
   )
 }
 
-function Row({ icon, label, value, accent }: { icon: React.ReactNode; label: string; value: string; accent?: 'ok' }) {
+function RoleBadge({ role }: { role: string }) {
+  if (role === 'super_admin') return <Pill tone="brand">Admin</Pill>
+  if (role === 'support')     return <Pill tone="brand">Support</Pill>
+  if (role === 'reseller')    return <Pill tone="brand">Reseller</Pill>
+  return <Pill tone="pend">User</Pill>
+}
+
+function Row({ icon, label, value, accent, mono }: { icon: React.ReactNode; label: string; value: string; accent?: 'ok'; mono?: boolean }) {
   return (
     <div>
-      <p className="flex items-center gap-1.5 text-[11px] text-[var(--fg-mute)] uppercase tracking-wider">
+      <p className="flex items-center gap-1.5 text-[10.5px] text-[var(--fg-mute)] uppercase tracking-wider mb-1">
         {icon}
         {label}
       </p>
-      <p className={`text-[14px] font-semibold mt-1 ${accent === 'ok' ? 'text-[var(--ok)]' : 'text-[var(--fg)]'}`}>{value}</p>
+      <p className={`text-[13.5px] font-semibold ${mono ? 'font-mono' : ''} ${accent === 'ok' ? 'text-[var(--ok)]' : 'text-[var(--fg)]'}`}>{value}</p>
     </div>
   )
 }

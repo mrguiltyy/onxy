@@ -5,6 +5,7 @@ import { formatPrice, relativeTime } from '@/lib/utils'
 import { Pill } from '@/components/ui/Pill'
 import { ActivityHeatmap } from './widgets/ActivityHeatmap'
 import { MonthlyChart } from './widgets/MonthlyChart'
+import { WelcomeBanner } from './WelcomeBanner'
 
 export const dynamic = 'force-dynamic'
 
@@ -17,6 +18,8 @@ interface Profile {
   tier?:              string
   two_factor_enabled?:boolean
   avatar_url?:        string | null
+  discord_id?:        string | null
+  onboarded_at?:      string | null
   created_at:         string
 }
 interface License { id: string; product: string; key_prefix: string; status: string; expires_at: string | null; created_at: string }
@@ -34,16 +37,18 @@ export default async function DashboardPage() {
     .eq('id', user!.id)
     .maybeSingle()
 
-  let extras: { tier?: string; two_factor_enabled?: boolean; avatar_url?: string | null } = {}
+  let extras: { tier?: string; two_factor_enabled?: boolean; avatar_url?: string | null; discord_id?: string | null; onboarded_at?: string | null } = {}
   try {
     const { data: extRaw, error: extErr } = await supabase
       .from('profiles')
-      .select('tier, two_factor_enabled, avatar_url')
+      .select('tier, two_factor_enabled, avatar_url, discord_id, onboarded_at')
       .eq('id', user!.id)
       .maybeSingle()
     if (!extErr && extRaw) extras = extRaw as typeof extras
   } catch {}
   const profile = (baseRaw ? { ...baseRaw, ...extras } : null) as Profile | null
+  const discordLinked  = !!extras.discord_id
+  const onboardingDone = !!extras.onboarded_at
 
   const [licsRes, actsRes, annsRes, txRes] = await Promise.all([
     supabase.from('licenses')
@@ -98,6 +103,13 @@ export default async function DashboardPage() {
 
   return (
     <div className="animate-in">
+
+      <WelcomeBanner
+        username={profile?.username ?? 'there'}
+        discordLinked={discordLinked}
+        hasLicense={totalKeys > 0}
+        onboardingDone={onboardingDone}
+      />
 
       {/* ── Hero ─ welcome + headline stats ───────────────────────── */}
       <section

@@ -58,13 +58,23 @@ export default async function LicensesPage() {
 
       <div className="card overflow-hidden">
         {licenses.length === 0 ? (
-          <div className="px-5 py-16 text-center">
-            <KeyRound size={36} className="mx-auto mb-3 text-[var(--fg-faint)]" />
-            <p className="text-[15px] font-medium mb-1">No license keys yet</p>
-            <p className="text-[13px] text-[var(--fg-dim)] mb-5">Generate your first key to get started.</p>
-            <Link href="/dashboard/generate" className="btn btn-primary btn-sm inline-flex">
-              <Plus size={13} /> Generate license
-            </Link>
+          <div className="px-5 py-16 text-center max-w-[440px] mx-auto">
+            <div className="w-12 h-12 mx-auto mb-4 rounded-md flex items-center justify-center"
+              style={{ background: 'var(--brand-faint)', color: 'var(--brand)' }}>
+              <KeyRound size={20} />
+            </div>
+            <p className="text-[15px] font-semibold mb-1">No license keys yet</p>
+            <p className="text-[12.5px] text-[var(--fg-dim)] mb-5 leading-relaxed">
+              You haven&apos;t bought or generated any keys. Browse the catalog to find a tool, or generate a key from your wallet.
+            </p>
+            <div className="flex items-center justify-center gap-2">
+              <Link href="/products" className="btn btn-primary btn-sm">
+                Browse products
+              </Link>
+              <Link href="/dashboard/generate" className="btn btn-secondary btn-sm">
+                <Plus size={11} /> Generate key
+              </Link>
+            </div>
           </div>
         ) : (
           <div className="overflow-x-auto">

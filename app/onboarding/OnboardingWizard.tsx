@@ -134,17 +134,18 @@ export function OnboardingWizard({ userId, username, email, createdAt, initial }
 
         {/* Footer nav */}
         <div className="px-8 py-5 border-t flex items-center justify-between gap-3" style={{ borderColor: 'var(--hairline)' }}>
-          {step > 1 ? (
-            <button onClick={back} disabled={pending} className="btn btn-secondary">
-              <ChevronLeft size={13} /> Back
+          <div className="flex items-center gap-3">
+            {step > 1 && (
+              <button onClick={back} disabled={pending} className="btn btn-secondary">
+                <ChevronLeft size={13} /> Back
+              </button>
+            )}
+            <button onClick={finish} disabled={pending} className="text-[12px] text-[var(--fg-mute)] hover:text-[var(--fg-dim)] underline-offset-2 hover:underline">
+              Skip &amp; finish setup
             </button>
-          ) : (
-            <Link href="/dashboard" className="text-[12px] text-[var(--fg-mute)] hover:text-[var(--fg-dim)]">
-              Skip for now
-            </Link>
-          )}
+          </div>
 
-          {error && <p className="text-[12px] text-[var(--bad)] text-center flex-1">{error}</p>}
+          {error && <p className="text-[12px] text-[var(--bad)] text-center flex-1 max-w-[280px] truncate">{error}</p>}
 
           {step < 8 ? (
             <button onClick={next} disabled={pending} className="btn btn-primary">
@@ -181,8 +182,11 @@ function StepWelcome({ username }: { username: string }) {
           WebkitTextFillColor: 'transparent',
         }}>{username}</span> 👋
       </h1>
-      <p className="text-[14.5px] text-[var(--fg-dim)] leading-relaxed mb-6">
-        Eight quick steps to set up your OP account. Most fields are optional — you can change everything later from your account page.
+      <p className="text-[14.5px] text-[var(--fg-dim)] leading-relaxed mb-3">
+        A few quick steps to set up your account. Everything is optional and editable later from your account page.
+      </p>
+      <p className="text-[12px] text-[var(--fg-mute)] mb-6">
+        In a rush? Click <strong className="text-[var(--fg-dim)]">&ldquo;Skip &amp; finish setup&rdquo;</strong> at the bottom of any step to jump straight to your dashboard.
       </p>
       <ul className="text-left text-[13px] space-y-2 max-w-[420px] mx-auto">
         <PerkRow icon={<User size={12} />}        label="Pick a profile photo + banner" />
