@@ -37,8 +37,8 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       />
       <div className="flex flex-1">
         <AdminSidebar />
-        <main className="flex-1 py-8">
-          <div className="px-6 md:px-10 max-w-[1280px]">
+        <main className="flex-1 py-10 md:py-12">
+          <div className="px-6 md:px-10 lg:px-12 max-w-[1320px]">
             {children}
           </div>
         </main>

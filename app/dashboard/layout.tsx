@@ -96,7 +96,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
           linkLabel={ann.link_label}
         />
       )}
-      <main className="flex-1 py-8">
+      <main className="flex-1 py-10 md:py-12">
         <div className="container-x">
           {children}
         </div>

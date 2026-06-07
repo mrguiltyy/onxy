@@ -707,3 +707,212 @@ summary {
 }
 summary::-webkit-details-marker { display: none; }
 details[open] summary { margin-bottom: 0; }
+
+/* ════════════════════════════════════════════════════════════════
+   FORM POLISH — kill all native browser UI glitches
+   (spinners, autofill blue, search clear X, etc.)
+   ════════════════════════════════════════════════════════════════ */
+
+/* Number spinners — hide on EVERY input, not just .input */
+input[type="number"],
+input[type="number"].form-input,
+input[type="number"].input {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  appearance: none;
+  margin: 0;
+  display: none;
+}
+
+/* Search inputs — kill the X clear button */
+input[type="search"]::-webkit-search-cancel-button,
+input[type="search"]::-webkit-search-decoration {
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+/* Chrome autofill — kill the yellow/blue background */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active,
+textarea:-webkit-autofill,
+textarea:-webkit-autofill:hover,
+textarea:-webkit-autofill:focus,
+textarea:-webkit-autofill:active,
+select:-webkit-autofill,
+select:-webkit-autofill:hover,
+select:-webkit-autofill:focus {
+  -webkit-box-shadow: 0 0 0 1000px var(--bg-2) inset !important;
+  -webkit-text-fill-color: var(--fg) !important;
+  caret-color: var(--fg) !important;
+  border-color: var(--hairline) !important;
+  transition: background-color 9999s ease-in-out 0s !important;
+}
+
+input:-webkit-autofill:focus,
+textarea:-webkit-autofill:focus {
+  border-color: var(--brand) !important;
+}
+
+/* Focus ring — consistent, no browser-default flash */
+.form-input:focus,
+.input:focus,
+textarea.form-input:focus,
+select.form-input:focus {
+  outline: none !important;
+  border-color: var(--brand) !important;
+  box-shadow: 0 0 0 3px rgba(240, 164, 183, 0.12) !important;
+  background: var(--surface) !important;
+}
+
+/* Selection color — match brand */
+::selection {
+  background: rgba(240, 164, 183, 0.30);
+  color: var(--fg);
+}
+
+::-moz-selection {
+  background: rgba(240, 164, 183, 0.30);
+  color: var(--fg);
+}
+
+/* Native select dropdown arrow — use our chevron, not the OS one */
+select.form-input {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239aa3b3' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 0.85rem center;
+  padding-right: 2.25rem;
+}
+
+select.form-input:focus {
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23f0a4b7' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>");
+}
+
+/* Native date / time pickers — hide the calendar icon glow on focus */
+input[type="date"]::-webkit-calendar-picker-indicator,
+input[type="time"]::-webkit-calendar-picker-indicator,
+input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+  filter: invert(0.7) brightness(1.2);
+  cursor: pointer;
+  opacity: 0.6;
+  transition: opacity 0.15s ease;
+}
+input[type="date"]::-webkit-calendar-picker-indicator:hover,
+input[type="time"]::-webkit-calendar-picker-indicator:hover {
+  opacity: 1;
+}
+
+/* Caret color */
+.form-input, .input {
+  caret-color: var(--brand);
+}
+
+/* Hide focus outline on buttons that aren't keyboard-focused */
+button:focus:not(:focus-visible),
+a:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* Keyboard focus outline on buttons / links */
+button:focus-visible,
+a:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Tighten checkboxes — they look weird at default size */
+input[type="checkbox"] {
+  cursor: pointer;
+  accent-color: var(--brand);
+}
+
+input[type="radio"] {
+  cursor: pointer;
+  accent-color: var(--brand);
+}
+
+/* Disable resize handle on textareas — looks ugly */
+textarea.form-input {
+  resize: vertical;
+  min-height: 80px;
+}
+
+/* Placeholder color — consistent across browsers */
+.form-input::placeholder,
+.input::placeholder,
+textarea.form-input::placeholder {
+  color: var(--fg-mute);
+  opacity: 0.65;
+}
+
+/* Mac-only: native search field has lingering shadow */
+input[type="search"] {
+  -webkit-appearance: textfield;
+  appearance: textfield;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   LAYOUT BREATHING ROOM
+   ════════════════════════════════════════════════════════════════ */
+
+/* Comfortable container max-widths */
+.container-x {
+  width: 100%;
+  max-width: 1240px;
+  margin: 0 auto;
+  padding-left: 1.5rem;
+  padding-right: 1.5rem;
+}
+
+@media (min-width: 768px) {
+  .container-x {
+    padding-left: 2.5rem;
+    padding-right: 2.5rem;
+  }
+}
+
+@media (min-width: 1200px) {
+  .container-x {
+    padding-left: 3rem;
+    padding-right: 3rem;
+  }
+}
+
+/* Cards — tighter visual cohesion */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+/* Consistent input height */
+.form-input,
+.input {
+  min-height: 38px;
+  line-height: 1.4;
+}
+
+/* Tighter btn vertical alignment */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+/* Smooth scroll on anchor links */
+html {
+  scroll-padding-top: 80px;
+}
