@@ -39,9 +39,10 @@ export async function POST(req: Request) {
   const productId = body.product_id
   const tier = body.tier
   if (!productId) return NextResponse.json({ error: 'product_id required.' }, { status: 400 })
-  if (!['day','week','month','lifetime'].includes(tier ?? '')) {
+  if (!tier || !['day','week','month','lifetime'].includes(tier)) {
     return NextResponse.json({ error: 'Invalid tier.' }, { status: 400 })
   }
+  // tier is now narrowed to a non-empty string
 
   const admin = supabaseAdmin()
   const { data: pRaw } = await admin
