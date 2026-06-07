@@ -65,7 +65,7 @@ export default async function PublicProfilePage({ params }: { params: Promise<{ 
     if (!error && extRaw) ext = extRaw as Partial<Profile>
   } catch { /* columns not yet added */ }
 
-  const profile = { ...baseRaw, ...ext } as Profile
+  const profile = { ...(baseRaw as Record<string, unknown>), ...ext } as Profile
 
   // If profile is explicitly private → 404 (don't leak existence)
   if (profile.profile_public === false) notFound()

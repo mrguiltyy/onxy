@@ -1,11 +1,12 @@
 'use client'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, KeyRound, Plus, Wallet, User, ChevronDown, MessageSquare, Shield, Boxes, BookOpen, Store, LifeBuoy, Search } from 'lucide-react'
+import { LayoutDashboard, KeyRound, Plus, Wallet, User, ChevronDown, MessageSquare, Shield, Boxes, BookOpen, Store, LifeBuoy } from 'lucide-react'
 import { cn, formatPrice } from '@/lib/utils'
 import { BrandRow } from './Brand'
 import { NotificationBell } from './NotificationBell'
 import { UserMenu } from './UserMenu'
+import { ProjectSelector } from './ProjectSelector'
 
 interface Notif {
   id: string; type: string; title: string; body: string | null
@@ -63,24 +64,12 @@ export function Topbar({ username, email, balanceCents, isAdmin, canManageApps, 
             <BrandRow href="/dashboard" />
           </div>
 
-          {/* Search */}
-          <div className="hidden md:flex flex-1 max-w-[440px] mx-3">
-            <div className="relative w-full">
-              <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--fg-mute)]" />
-              <input
-                type="text"
-                placeholder="Search licenses, products, users…"
-                className="form-input pl-9 pr-3 py-2 text-[12.5px] w-full"
-                style={{ background: 'var(--surface-2)' }}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    const q = (e.target as HTMLInputElement).value.trim()
-                    if (q) window.location.href = `/dashboard/licenses?q=${encodeURIComponent(q)}`
-                  }
-                }}
-              />
+          {/* Project picker (resellers + admins; just visual for now) */}
+          {canManageApps && (
+            <div className="hidden md:flex items-center mx-3">
+              <ProjectSelector />
             </div>
-          </div>
+          )}
 
           {/* Tabs */}
           <nav className="flex items-center gap-2 overflow-x-auto flex-1 md:flex-initial justify-center scrollbar-none">

@@ -11,7 +11,7 @@ interface Props {
   existingFactorId: string | null
 }
 
-type Stage = 'idle' | 'enrolling' | 'showing_qr' | 'verifying' | 'enabled' | 'disabling'
+type Stage = 'idle' | 'enrolling' | 'showing_qr' | 'verifying' | 'enabled'
 
 interface EnrollData {
   factorId: string
@@ -97,22 +97,20 @@ export function TwoFactorSetup({ enabled: initialEnabled, username, existingFact
   async function disable() {
     if (!confirm('Disable two-factor authentication? Your account will be less secure.')) return
     setError(null)
-    setStage('disabling')
-    try {
-      const supabase = supabaseBrowser()
-      if (existingFactorId) {
-        const { error } = await supabase.auth.mfa.unenroll({ factorId: existingFactorId })
-        if (error) { setError(error.message); setStage('enabled'); return }
-      }
-      start(async () => {
+    start(async () => {
+      try {
+        const supabase = supabaseBrowser()
+        if (existingFactorId) {
+          const { error } = await supabase.auth.mfa.unenroll({ factorId: existingFactorId })
+          if (error) { setError(error.message); return }
+        }
         await setTwoFactorFlag(false)
         setEnabled(false)
         setStage('idle')
-      })
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unexpected error.')
-      setStage('enabled')
-    }
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Unexpected error.')
+      }
+    })
   }
 
   async function copySecret() {
@@ -148,7 +146,7 @@ export function TwoFactorSetup({ enabled: initialEnabled, username, existingFact
           </p>
           <button onClick={disable} disabled={pending} className="btn btn-sm"
             style={{ background: 'rgba(239,68,68,0.08)', color: 'var(--bad)', border: '1px solid rgba(239,68,68,0.25)' }}>
-            {pending || stage === 'disabling' ? <Loader2 size={12} className="animate-spin" /> : <><X size={12} /> Disable 2FA</>}
+            {pending ? <Loader2 size={12} className="animate-spin" /> : <><X size={12} /> Disable 2FA</>}
           </button>
           {error && <p className="text-[12px] text-[var(--bad)] mt-3">{error}</p>}
         </div>

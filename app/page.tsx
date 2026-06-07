@@ -26,19 +26,11 @@ interface UpdateRow {
   created_at: string
 }
 
-interface IncidentRow { status: string }
-
 export default async function HomePage() {
   const supa = await supabaseServer()
   const { data: { user } } = await supa.auth.getUser()
   const signedIn = !!user
   const admin = supabaseAdmin()
-
-  const [{ count: usersCount }, { count: licsCount }, { count: activeLicsCount }] = await Promise.all([
-    admin.from('profiles').select('id', { count: 'exact', head: true }),
-    admin.from('licenses').select('id', { count: 'exact', head: true }),
-    admin.from('licenses').select('id', { count: 'exact', head: true }).eq('status', 'active'),
-  ])
 
   const { data: prodsRaw } = await admin
     .from('products')
@@ -56,12 +48,6 @@ export default async function HomePage() {
     .order('created_at', { ascending: false })
     .limit(3)
   const updates = (updsRaw as UpdateRow[] | null) ?? []
-
-  const { data: incidents } = await admin
-    .from('status_incidents')
-    .select('status')
-    .neq('status', 'resolved')
-  const allOk = !incidents || (incidents as IncidentRow[]).length === 0
 
   const updateProductMap = new Map<string, string>()
   if (updates.length) {
@@ -116,25 +102,8 @@ export default async function HomePage() {
                 'radial-gradient(ellipse 700px 500px at 80% 60%, rgba(162,200,238,0.10), transparent 65%)',
             }}
           />
-          <div className="container-x relative pt-20 md:pt-28 pb-24">
+          <div className="container-x relative pt-24 md:pt-32 pb-28">
             <div className="max-w-[820px]">
-              <Link
-                href="/status"
-                className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md text-[11.5px] font-medium mb-8 transition-colors"
-                style={{
-                  background: 'var(--surface-2)',
-                  border:     '1px solid var(--hairline)',
-                  color:      'var(--fg-dim)',
-                }}
-              >
-                {allOk ? <Check size={11} className="text-[var(--ok)]" /> : <Activity size={11} className="text-[var(--bad)]" />}
-                <span style={{ color: allOk ? 'var(--ok)' : 'var(--bad)' }}>
-                  {allOk ? 'All systems operational' : 'Active incident'}
-                </span>
-                <span className="text-[var(--fg-mute)]">·</span>
-                <span>System status</span>
-              </Link>
-
               <h1
                 className="text-[48px] md:text-[64px] font-bold tracking-tight leading-[1.02] mb-7"
                 style={{ letterSpacing: '-0.035em' }}
@@ -175,16 +144,6 @@ export default async function HomePage() {
               <p className="text-[12px] text-[var(--fg-mute)]">
                 Educational use only · No card needed to browse · Cancel anytime
               </p>
-            </div>
-
-            {/* Inline stats strip */}
-            <div className="mt-16 pt-10 border-t flex items-center justify-between flex-wrap gap-6"
-              style={{ borderColor: 'var(--hairline)' }}>
-              <Metric label="Users"        value={(usersCount ?? 0).toLocaleString()} />
-              <Metric label="Licenses"     value={(licsCount ?? 0).toLocaleString()} />
-              <Metric label="Active keys"  value={(activeLicsCount ?? 0).toLocaleString()} accent="ok" />
-              <Metric label="Uptime"       value="99.9%" />
-              <Metric label="SDK languages" value="7" />
             </div>
           </div>
         </section>
@@ -411,15 +370,15 @@ function Section({ eyebrow, title, description, link, children }: {
   children:    React.ReactNode
 }) {
   return (
-    <section className="py-24 border-t" style={{ borderColor: 'var(--hairline)' }}>
+    <section className="py-28 md:py-32 border-t" style={{ borderColor: 'var(--hairline)' }}>
       <div className="container-x">
-        <header className="flex items-end justify-between gap-6 mb-10 flex-wrap">
+        <header className="flex items-end justify-between gap-6 mb-12 flex-wrap">
           <div className="max-w-[640px]">
             <p className="label-mono mb-3">{eyebrow}</p>
-            <h2 className="text-[28px] md:text-[34px] font-bold tracking-tight mb-2" style={{ letterSpacing: '-0.025em' }}>
+            <h2 className="text-[28px] md:text-[34px] font-bold tracking-tight mb-3" style={{ letterSpacing: '-0.025em' }}>
               {title}
             </h2>
-            {description && <p className="text-[14px] text-[var(--fg-dim)] leading-relaxed">{description}</p>}
+            {description && <p className="text-[14.5px] text-[var(--fg-dim)] leading-relaxed">{description}</p>}
           </div>
           {link && (
             <Link href={link.href} className="text-[13px] text-[var(--brand)] hover:underline inline-flex items-center gap-1 shrink-0">
@@ -435,18 +394,6 @@ function Section({ eyebrow, title, description, link, children }: {
 
 
 /* ─── Sub-components ─────────────────────────────────────────────── */
-function Metric({ label, value, accent = 'fg' }: { label: string; value: string; accent?: 'fg' | 'ok' }) {
-  return (
-    <div>
-      <p className="text-[10.5px] font-mono uppercase tracking-wider text-[var(--fg-mute)] mb-1">{label}</p>
-      <p className="text-[26px] font-bold tabular-nums leading-none"
-        style={{ color: accent === 'ok' ? 'var(--ok)' : 'var(--fg)', letterSpacing: '-0.02em' }}>
-        {value}
-      </p>
-    </div>
-  )
-}
-
 function TierCard({ icon, tier, price, tagline, features, cta, ctaHref, featured }: {
   icon: React.ReactNode; tier: string; price: string; tagline: string; features: string[]; cta: string; ctaHref: string; featured?: boolean;
 }) {

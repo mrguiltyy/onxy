@@ -1,29 +1,28 @@
 import Link from 'next/link'
-import { ArrowRight, Star, Infinity, Shield, RefreshCw } from 'lucide-react'
+import { ArrowRight, Boxes } from 'lucide-react'
 import { PublicShell } from '@/components/PublicShell'
 import { supabaseAdmin } from '@/lib/supabase/server'
-import { formatPrice } from '@/lib/utils'
 
 export const metadata = { title: 'Products · OP' }
 export const dynamic = 'force-dynamic'
 
 interface Product {
-  id:               string
-  slug:             string
-  name:             string
-  tagline:          string | null
-  description:      string | null
-  image_url:        string | null
-  category:         string
-  version:          string
-  price_day:        number | null
-  price_week:       number | null
-  price_month:      number | null
-  price_lifetime:   number | null
-  reseller_open:    boolean
-  lifetime_support: boolean
-  features:         string[]
-  featured:         boolean
+  id:              string
+  slug:            string
+  name:            string
+  tagline:         string | null
+  description:     string | null
+  image_url:       string | null
+  category:        string
+  version:         string
+  price_day:       number | null
+  price_week:      number | null
+  price_month:     number | null
+  price_lifetime:  number | null
+  reseller_open:   boolean
+  lifetime_support:boolean
+  features:        string[]
+  featured:        boolean
 }
 
 export default async function ProductsPage() {
@@ -40,44 +39,39 @@ export default async function ProductsPage() {
 
   return (
     <PublicShell wide>
-      <div className="mb-12">
-        <p className="label-mono mb-3">Marketplace</p>
-        <h1 className="text-[40px] md:text-[48px] font-bold tracking-tight leading-[1.05]" style={{ letterSpacing: '-0.03em' }}>
-          Private tools,<br />
-          <span style={{
-            background: 'var(--brand-gradient)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-            backgroundClip: 'text',
-          }}>built right.</span>
-        </h1>
-        <p className="text-[15px] text-[var(--fg-dim)] mt-5 max-w-[560px] leading-relaxed">
-          Each tool ships with our auth engine baked in — HWID-locked, banlist-enforced, updated automatically.
-          Lifetime buyers get ongoing support. Resellers can rebrand and white-label any product below.
-        </p>
+      <div className="mb-12 flex items-end justify-between flex-wrap gap-6">
+        <div>
+          <p className="label-mono mb-3">Store</p>
+          <h1 className="text-[36px] md:text-[44px] font-bold tracking-tight leading-[1.05]" style={{ letterSpacing: '-0.025em' }}>
+            All our tools.
+          </h1>
+          <p className="text-[14px] text-[var(--fg-dim)] mt-3 max-w-[520px] leading-relaxed">
+            Every tool ships with our auth engine — HWID-locked, banlist-enforced, instantly updated.
+          </p>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <span className="text-[10px] font-mono uppercase tracking-[0.2em] text-[var(--fg-mute)] px-3 py-1.5 rounded-full"
+            style={{ background: 'var(--brand-faint)', border: '1px solid rgba(240,164,183,0.25)', color: 'var(--brand)' }}>
+            {products.length} {products.length === 1 ? 'tool' : 'tools'}
+          </span>
+        </div>
       </div>
 
-      {/* Value props row */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-10">
-        <Prop icon={<Shield size={14} />} title="Auth + HWID built-in" body="Every tool uses our hardened auth engine — license-key + hardware lock + per-IP throttling." />
-        <Prop icon={<RefreshCw size={14} />} title="Lifetime updates" body="Tools we publish stay current. You get every release automatically — no extra cost." />
-        <Prop icon={<Star size={14} />} title="White-label reselling" body="Reseller tier? Pick any tool, set your own branding, generate keys at wholesale." />
-      </div>
-
-      {/* Product grid */}
       {products.length === 0 ? (
         <div className="card p-16 text-center">
-          <p className="text-[14px] text-[var(--fg-dim)]">No products listed yet — check back soon.</p>
+          <Boxes size={32} className="mx-auto mb-3 text-[var(--fg-faint)]" />
+          <p className="text-[14px] text-[var(--fg-dim)]">No tools listed yet — check back soon.</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-          {products.map(p => <ProductCard key={p.id} p={p} />)}
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 md:gap-4">
+          {products.map(p => <ProductTile key={p.id} p={p} />)}
         </div>
       )}
 
-      {/* Reseller call-to-action */}
+      {/* Reseller CTA */}
       <div
-        className="mt-16 rounded-md p-8 flex items-center justify-between flex-wrap gap-4"
+        className="mt-20 rounded-md p-8 flex items-center justify-between flex-wrap gap-4"
         style={{
           background: 'linear-gradient(135deg, rgba(240,164,183,0.06), rgba(162,200,238,0.06))',
           border: '1px solid var(--hairline)',
@@ -85,99 +79,117 @@ export default async function ProductsPage() {
       >
         <div>
           <p className="label-mono mb-2">Reseller program</p>
-          <h2 className="text-[22px] font-bold tracking-tight mb-1">Resell our tools, your brand on top.</h2>
+          <h2 className="text-[22px] font-bold tracking-tight mb-1">Sell these tools under your name.</h2>
           <p className="text-[13.5px] text-[var(--fg-dim)] max-w-[560px]">
-            White-label any active product, set your own name and image, generate keys at wholesale pricing,
-            and get notified the second we ship an update.
+            Pick any tools, set your own branding, generate keys at wholesale. $15 base + $5 per extra tool.
           </p>
         </div>
-        <Link href="/register" className="btn btn-primary">
-          Apply for reseller <ArrowRight size={13} />
+        <Link href="/reseller" className="btn btn-primary">
+          See reseller pricing <ArrowRight size={13} />
         </Link>
       </div>
     </PublicShell>
   )
 }
 
-function Prop({ icon, title, body }: { icon: React.ReactNode; title: string; body: string }) {
-  return (
-    <div className="card p-4">
-      <div className="flex items-center gap-2 mb-2">
-        <span className="w-7 h-7 rounded-md flex items-center justify-center" style={{ background: 'var(--brand-faint)', color: 'var(--brand)' }}>
-          {icon}
-        </span>
-        <p className="font-semibold text-[13.5px]">{title}</p>
-      </div>
-      <p className="text-[12.5px] text-[var(--fg-dim)] leading-relaxed">{body}</p>
-    </div>
-  )
-}
+// ────────────────────────────────────────────────────────────────
+// Cosmocheats-style product tile
+// ────────────────────────────────────────────────────────────────
+function ProductTile({ p }: { p: Product }) {
+  // Heuristic accent based on the product slug hash for variety in the grid
+  const accents = [
+    { from: '#7a2cdf', to:  '#3a0f6e' },   // purple
+    { from: '#dd2c87', to:  '#6e0f47' },   // pink
+    { from: '#2c5cdf', to:  '#0f2f6e' },   // blue
+    { from: '#df652c', to:  '#6e370f' },   // orange
+    { from: '#1fb38c', to:  '#0f5e4a' },   // teal
+    { from: '#df2c4f', to:  '#6e0f1a' },   // red
+  ]
+  const i = hashCode(p.slug) % accents.length
+  const accent = accents[i]
 
-function ProductCard({ p }: { p: Product }) {
-  const fromPrice = p.price_day ?? p.price_week ?? p.price_month ?? p.price_lifetime
   return (
     <Link
       href={`/products/${p.slug}`}
-      className="card card-hover overflow-hidden flex flex-col group"
-      style={{ height: '100%' }}
+      className="group relative aspect-[16/10] rounded-md overflow-hidden block transition-all hover:-translate-y-1 hover:shadow-[0_18px_40px_rgba(0,0,0,0.40)]"
+      style={{
+        background: p.image_url
+          ? `linear-gradient(135deg, ${accent.from}99 0%, ${accent.to}cc 100%), url(${p.image_url}) center/cover`
+          : `linear-gradient(135deg, ${accent.from} 0%, ${accent.to} 100%)`,
+        border: '1px solid rgba(255,255,255,0.06)',
+      }}
     >
-      {/* Image / banner */}
-      <div
-        className="h-32 relative overflow-hidden"
-        style={{
-          background: p.image_url
-            ? `url(${p.image_url}) center/cover`
-            : 'linear-gradient(135deg, rgba(240,164,183,0.20), rgba(162,200,238,0.20))',
-          borderBottom: '1px solid var(--hairline)',
-        }}
-      >
-        {p.featured && (
-          <span
-            className="absolute top-3 left-3 text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-md"
-            style={{ background: 'var(--brand-gradient)', color: '#3a2630' }}
-          >
-            <Star size={9} className="inline mr-1" /> Featured
-          </span>
-        )}
-        {p.price_lifetime && (
-          <span
-            className="absolute top-3 right-3 text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-md flex items-center gap-1"
-            style={{ background: 'rgba(0,0,0,0.55)', color: '#fff', backdropFilter: 'blur(6px)' }}
-          >
-            <Infinity size={10} /> Lifetime
-          </span>
-        )}
+      {/* Diagonal slash decoration in top-left (the "////" brand mark) */}
+      <div className="absolute top-2 left-2.5 flex items-center gap-1.5 pointer-events-none">
+        <span
+          className="block w-3.5 h-0.5 rounded-full"
+          style={{ background: 'rgba(255,255,255,0.55)', transform: 'skewX(-30deg)' }}
+        />
+        <span className="text-[8.5px] font-bold uppercase tracking-[0.18em] text-white/70">
+          OP // {p.category}
+        </span>
       </div>
 
-      <div className="p-5 flex-1 flex flex-col">
-        <div className="flex items-center gap-2 mb-1">
-          <h3 className="font-semibold text-[15px] truncate flex-1">{p.name}</h3>
-          <span className="text-[10px] text-[var(--fg-mute)] font-mono uppercase tracking-wider">v{p.version}</span>
-        </div>
-        {p.tagline && <p className="text-[12.5px] text-[var(--fg-dim)] line-clamp-2 mb-3">{p.tagline}</p>}
+      {/* Bottom-left gradient bar for depth */}
+      <div
+        className="absolute bottom-0 left-0 right-0 h-12 pointer-events-none"
+        style={{
+          background: 'linear-gradient(to top, rgba(0,0,0,0.55), transparent)',
+        }}
+      />
 
-        {p.features.length > 0 && (
-          <ul className="mb-4 space-y-1">
-            {p.features.slice(0, 3).map((f, i) => (
-              <li key={i} className="text-[12px] text-[var(--fg-dim)] flex items-start gap-1.5">
-                <span className="text-[var(--brand)] mt-0.5">·</span> {f}
-              </li>
-            ))}
-          </ul>
-        )}
+      {/* Big bold product name — bottom-left */}
+      <div className="absolute left-3 right-3 bottom-3">
+        <h3
+          className="text-[15px] md:text-[18px] font-black uppercase tracking-tight leading-[0.95] text-white"
+          style={{
+            letterSpacing: '-0.02em',
+            textShadow: '0 2px 12px rgba(0,0,0,0.6), 0 1px 2px rgba(0,0,0,0.8)',
+          }}
+        >
+          {p.name}
+        </h3>
+      </div>
 
-        <div className="mt-auto pt-3 border-t flex items-end justify-between" style={{ borderColor: 'var(--hairline)' }}>
-          {fromPrice !== null && fromPrice !== undefined ? (
-            <div>
-              <p className="text-[10.5px] text-[var(--fg-mute)] uppercase tracking-wider">From</p>
-              <p className="text-[18px] font-bold tabular-nums" style={{ letterSpacing: '-0.02em' }}>{formatPrice(fromPrice)}</p>
-            </div>
-          ) : <span />}
-          <span className="text-[12.5px] text-[var(--brand)] inline-flex items-center gap-1 group-hover:gap-2 transition-all">
-            View <ArrowRight size={11} />
-          </span>
-        </div>
+      {/* Featured ribbon (top-right) */}
+      {p.featured && (
+        <span
+          className="absolute top-2 right-2 text-[8.5px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-sm"
+          style={{
+            background: 'rgba(255,255,255,0.92)',
+            color: accent.to,
+          }}
+        >
+          ★ Featured
+        </span>
+      )}
+
+      {/* Hover overlay → subtle brand glow + "View" badge */}
+      <div
+        className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none"
+        style={{
+          background: 'linear-gradient(135deg, rgba(240,164,183,0.20), rgba(162,200,238,0.20))',
+        }}
+      >
+        <span
+          className="text-[10.5px] font-bold uppercase tracking-[0.2em] px-3 py-1.5 rounded-full"
+          style={{
+            background: 'rgba(255,255,255,0.95)',
+            color: '#3a2630',
+          }}
+        >
+          View →
+        </span>
       </div>
     </Link>
   )
+}
+
+function hashCode(str: string): number {
+  let h = 0
+  for (let i = 0; i < str.length; i++) {
+    h = ((h << 5) - h) + str.charCodeAt(i)
+    h |= 0
+  }
+  return Math.abs(h)
 }
