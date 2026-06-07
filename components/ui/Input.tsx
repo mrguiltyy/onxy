@@ -14,7 +14,10 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
       {label && <label className="text-[12px] text-[var(--fg-dim)] font-medium">{label}</label>}
       <div className="relative">
         {icon && (
-          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--fg-mute)]">
+          <span
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--fg-mute)] pointer-events-none"
+            style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 16, height: 16 }}
+          >
             {icon}
           </span>
         )}
@@ -22,10 +25,10 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
           ref={ref}
           className={cn(
             'input',
-            icon  && 'pl-9',
             error && '!border-[var(--bad)]',
             className,
           )}
+          style={icon ? { paddingLeft: '2.5rem' } : undefined}
           {...props}
         />
       </div>
