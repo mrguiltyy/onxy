@@ -1,8 +1,10 @@
+import { Suspense } from 'react'
 import Link from 'next/link'
 import { Plus, KeyRound, Copy } from 'lucide-react'
 import { supabaseServer } from '@/lib/supabase/server'
 import { Pill } from '@/components/ui/Pill'
 import { relativeTime, formatDate } from '@/lib/utils'
+import { PurchaseBanner } from './PurchaseBanner'
 
 interface License {
   id: string
@@ -36,8 +38,17 @@ export default async function LicensesPage() {
     banned:  licenses.filter(l => l.status === 'banned').length,
   }
 
+  // Most recent license — used for the post-purchase celebration banner
+  const recentKey = licenses[0]
+    ? { prefix: licenses[0].key_prefix, product: licenses[0].product }
+    : null
+
   return (
     <div className="animate-in">
+      <Suspense fallback={null}>
+        <PurchaseBanner recentKey={recentKey} />
+      </Suspense>
+
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
           <h1 className="text-[22px] font-bold tracking-tight">License Keys</h1>

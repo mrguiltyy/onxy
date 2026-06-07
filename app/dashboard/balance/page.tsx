@@ -214,12 +214,24 @@ export default function BalancePage() {
       <div className="card">
         <div className="px-5 py-4 border-b border-[var(--hairline)]">
           <p className="label-mono">History</p>
-          <h2 className="font-semibold">Code redemptions</h2>
+          <h2 className="font-semibold">Wallet activity</h2>
         </div>
         {history.length === 0 ? (
-          <p className="px-5 py-12 text-center text-[13px] text-[var(--fg-mute)]">
-            No redemptions yet. Redeem your first code above.
-          </p>
+          <div className="px-5 py-16 text-center max-w-[440px] mx-auto">
+            <div className="w-12 h-12 mx-auto mb-4 rounded-md flex items-center justify-center"
+              style={{ background: 'var(--brand-faint)', color: 'var(--brand)' }}>
+              <Wallet size={20} />
+            </div>
+            <p className="text-[15px] font-semibold mb-1">No wallet activity yet</p>
+            <p className="text-[12.5px] text-[var(--fg-dim)] mb-5 leading-relaxed">
+              Top up with a card to start using OP, or redeem a code from your upstream parent. Every credit, debit, and purchase shows up here.
+            </p>
+            <div className="flex items-center justify-center gap-2 flex-wrap">
+              <a href="#stripe-topup" className="btn btn-primary btn-sm">
+                Top up with card
+              </a>
+            </div>
+          </div>
         ) : (
           <table className="table">
             <thead>

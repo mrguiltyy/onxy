@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { LogOut, User as UserIcon, Mail, Wallet, Hash, Store, ArrowRight, ShieldCheck, Bell, KeyRound } from 'lucide-react'
+import { LogOut, User as UserIcon, Mail, Wallet, Hash, Store, ArrowRight, ShieldCheck, Bell, KeyRound, Lock } from 'lucide-react'
 import { supabaseServer } from '@/lib/supabase/server'
 import { formatPrice, formatDate } from '@/lib/utils'
 import { Pill } from '@/components/ui/Pill'
@@ -18,6 +18,7 @@ interface Profile {
   discord_username?:     string | null
   discord_credit_given?: boolean
   avatar_url?:           string | null
+  two_factor_enabled?:   boolean
 }
 
 export default async function AccountPage() {
@@ -36,7 +37,7 @@ export default async function AccountPage() {
   try {
     const { data: extRaw, error: extErr } = await supabase
       .from('profiles')
-      .select('discord_id, discord_username, discord_credit_given, avatar_url')
+      .select('discord_id, discord_username, discord_credit_given, avatar_url, two_factor_enabled')
       .eq('id', user!.id)
       .maybeSingle()
     if (!extErr && extRaw) extras = extRaw as Partial<Profile>
@@ -90,6 +91,40 @@ export default async function AccountPage() {
           <Link href="/dashboard/notifications" className="btn btn-secondary btn-sm">
             Notifications <Bell size={11} />
           </Link>
+        </div>
+      </div>
+
+      {/* Security */}
+      <div className="card p-5 mb-5">
+        <div className="flex items-start gap-4">
+          <span className="w-9 h-9 rounded-md flex items-center justify-center shrink-0"
+            style={{
+              background: profile?.two_factor_enabled ? 'rgba(34,197,94,0.10)' : 'var(--brand-faint)',
+              color:      profile?.two_factor_enabled ? 'var(--ok)' : 'var(--brand)',
+            }}>
+            <Lock size={16} />
+          </span>
+          <div className="flex-1">
+            <p className="label-mono mb-1">Security</p>
+            <h2 className="text-[15px] font-bold mb-1">
+              Two-factor authentication
+              {profile?.two_factor_enabled && (
+                <span className="ml-2 text-[10.5px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded align-middle"
+                  style={{ background: 'rgba(34,197,94,0.10)', color: 'var(--ok)' }}>ON</span>
+              )}
+            </h2>
+            <p className="text-[12.5px] text-[var(--fg-dim)] mb-3 leading-relaxed">
+              {profile?.two_factor_enabled
+                ? 'Your account is protected with TOTP-based 2FA. You can disable it from the settings.'
+                : 'Add a second factor to sign-in. Strongly recommended if you have wallet balance or active licenses.'}
+            </p>
+            <Link href="/dashboard/account/two-factor" className="btn btn-sm"
+              style={profile?.two_factor_enabled
+                ? { background: 'var(--surface-2)', color: 'var(--fg-dim)', border: '1px solid var(--hairline)' }
+                : { background: 'var(--brand)', color: '#0a0d14', border: 'none' }}>
+              {profile?.two_factor_enabled ? 'Manage 2FA' : 'Set up 2FA'} <ArrowRight size={11} />
+            </Link>
+          </div>
         </div>
       </div>
 

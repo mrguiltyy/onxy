@@ -409,9 +409,9 @@ function StepSecurity({ twoFactorEnabled }: { twoFactorEnabled: boolean }) {
               Add an extra layer of security. Set it up now—scan the QR code in a popup—or skip and do it later in <strong className="text-[var(--fg)]">Account → Security</strong>.
             </p>
             <div className="flex gap-2">
-              <button className="btn btn-primary btn-sm" disabled>
-                <Lock size={11} /> Set up 2FA <span className="text-[10px] opacity-60">(coming soon)</span>
-              </button>
+              <Link href="/dashboard/account/two-factor" target="_blank" className="btn btn-primary btn-sm">
+                <Lock size={11} /> Set up 2FA
+              </Link>
             </div>
           </div>
         </div>
