@@ -37,7 +37,7 @@ const baseTabs = [
 const resellerTabs = [
   { href: '/dashboard/applications', icon: Boxes,    label: 'Applications' },
   { href: '/dashboard/resells',      icon: Store,    label: 'My resells'   },
-  { href: '/dashboard/docs',         icon: BookOpen, label: 'Docs'         },
+  { href: '/dashboard/api-docs',     icon: BookOpen, label: 'API docs'     },
 ]
 
 export function Topbar({ username, email, balanceCents, isAdmin, canManageApps, avatarUrl, notifications = [], unreadCount = 0 }: TopbarProps) {
