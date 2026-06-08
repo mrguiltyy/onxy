@@ -130,15 +130,6 @@ export default async function PublicProfilePage({ params }: { params: Promise<{ 
         <Link href="/register" className="btn btn-secondary btn-sm">Join OP</Link>
       </div>
 
-      {/* Bio */}
-      {profile.bio && (
-        <div className="px-6 md:px-10 mb-8">
-          <p className="text-[14.5px] text-[var(--fg-dim)] leading-relaxed max-w-[640px] whitespace-pre-wrap">
-            {profile.bio}
-          </p>
-        </div>
-      )}
-
       {/* Stats */}
       <div className="px-6 md:px-10 mb-10">
         <div className="grid grid-cols-3 gap-4 max-w-[480px]">

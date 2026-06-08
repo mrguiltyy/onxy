@@ -43,7 +43,6 @@ export function OnboardingWizard({ userId, username, email, createdAt, initial }
   // state for fields
   const [avatarUrl, setAvatarUrl] = useState(initial.avatar_url ?? '')
   const [bannerUrl, setBannerUrl] = useState(initial.banner_url ?? '')
-  const [bio,       setBio]       = useState(initial.bio ?? '')
   const [profilePublic, setProfilePublic] = useState(initial.profile_public)
 
   function next() {
@@ -54,7 +53,7 @@ export function OnboardingWizard({ userId, username, email, createdAt, initial }
     }
     // Auto-save on step transitions
     start(async () => {
-      const res = await saveOnboarding({ avatarUrl, bannerUrl, bio, profilePublic })
+      const res = await saveOnboarding({ avatarUrl, bannerUrl, profilePublic })
       if (!res.ok) setError(res.error ?? 'Save failed.')
       setStep(s => s + 1)
     })
@@ -124,7 +123,7 @@ export function OnboardingWizard({ userId, username, email, createdAt, initial }
         <div className="px-8 py-8 min-h-[460px]">
           {step === 1 && <StepWelcome username={username} />}
           {step === 2 && <StepProfile  avatarUrl={avatarUrl} bannerUrl={bannerUrl} setAvatarUrl={setAvatarUrl} setBannerUrl={setBannerUrl} />}
-          {step === 3 && <StepVisibility username={username} memberSince={memberSince} profilePublic={profilePublic} setProfilePublic={setProfilePublic} bio={bio} setBio={setBio} avatarUrl={avatarUrl} />}
+          {step === 3 && <StepVisibility username={username} memberSince={memberSince} profilePublic={profilePublic} setProfilePublic={setProfilePublic} avatarUrl={avatarUrl} />}
           {step === 4 && <StepSecurity twoFactorEnabled={initial.two_factor_enabled} />}
           {step === 5 && <StepFeatures />}
           {step === 6 && <StepQuick />}
@@ -282,8 +281,8 @@ function StepProfile({ avatarUrl, bannerUrl, setAvatarUrl, setBannerUrl }: {
 /* ──────────────────────────────────────────────────────────────
    STEP 3 — Visibility + live preview
    ────────────────────────────────────────────────────────────── */
-function StepVisibility({ username, memberSince, profilePublic, setProfilePublic, bio, setBio, avatarUrl }: {
-  username: string; memberSince: string; profilePublic: boolean; setProfilePublic: (v: boolean) => void; bio: string; setBio: (v: string) => void; avatarUrl: string;
+function StepVisibility({ username, memberSince, profilePublic, setProfilePublic, avatarUrl }: {
+  username: string; memberSince: string; profilePublic: boolean; setProfilePublic: (v: boolean) => void; avatarUrl: string;
 }) {
   return (
     <div>
@@ -294,7 +293,7 @@ function StepVisibility({ username, memberSince, profilePublic, setProfilePublic
         <div>
           <h2 className="text-[20px] font-bold tracking-tight">Your public profile</h2>
           <p className="text-[13px] text-[var(--fg-dim)] mt-0.5 max-w-[600px] leading-relaxed">
-            Control what others see on your profile page. Add a short bio and choose whether your profile is visible in the directory. You can change this anytime in <strong className="text-[var(--fg)]">Account → Profile</strong>.
+            Choose whether your profile is visible in the public directory. You can change this anytime in <strong className="text-[var(--fg)]">Account → Profile</strong>.
           </p>
         </div>
       </div>
@@ -310,26 +309,15 @@ function StepVisibility({ username, memberSince, profilePublic, setProfilePublic
             />
             <div>
               <p className="font-semibold text-[14px]">Profile visible to others</p>
-              <p className="text-[12px] text-[var(--fg-mute)] leading-relaxed">
-                When on, your profile appears in the directory and at the link below.
+              <p className="text-[12px] text-[var(--fg-mute)] leading-relaxed mt-1">
+                When on, anyone can see your profile at <code className="font-mono text-[11px] text-[var(--brand)]">onxy.cc/u/{username}</code>.
+                When off, the link 404s and your account is hidden from the public directory.
               </p>
             </div>
           </label>
 
-          <div className="mt-5">
-            <label className="form-label">Short bio <span className="text-[var(--fg-mute)] normal-case text-[11px]">(optional)</span></label>
-            <textarea
-              value={bio}
-              onChange={e => setBio(e.target.value.slice(0, 500))}
-              rows={5}
-              placeholder="A few words about you or your work…"
-              className="form-input resize-none font-[inherit]"
-            />
-            <p className="text-[10.5px] text-[var(--fg-mute)] mt-1 text-right tabular-nums">{bio.length}/500</p>
-          </div>
-
-          <Link href={`/u/${username}`} target="_blank" className="text-[12.5px] text-[var(--brand)] hover:underline inline-flex items-center gap-1 mt-3">
-            View your profile <ExternalLink size={10} />
+          <Link href={`/u/${username}`} target="_blank" className="text-[12.5px] text-[var(--brand)] hover:underline inline-flex items-center gap-1 mt-4">
+            Preview your profile <ExternalLink size={10} />
           </Link>
         </div>
 
@@ -355,17 +343,21 @@ function StepVisibility({ username, memberSince, profilePublic, setProfilePublic
                 <div className="flex-1 min-w-0">
                   <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--fg-mute)]">Member</p>
                   <p className="text-[16px] font-bold text-[var(--fg)]">@{username}</p>
-                  <p className="text-[11px] text-[var(--fg-dim)] mt-0.5">usr_xxxx · Member since {memberSince}</p>
+                  <p className="text-[11px] text-[var(--fg-dim)] mt-0.5">Member since {memberSince}</p>
                   <div className="flex items-center gap-3 mt-3 text-[11px]">
-                    <span><strong className="text-[var(--fg)]">0</strong> <span className="text-[var(--fg-mute)]">Total Keys</span></span>
+                    <span><strong className="text-[var(--fg)]">0</strong> <span className="text-[var(--fg-mute)]">Keys</span></span>
                     <span><strong className="text-[var(--fg)]">0</strong> <span className="text-[var(--fg-mute)]">Referrals</span></span>
                     <span><strong className="text-[var(--fg)]">0</strong> <span className="text-[var(--fg-mute)]">Projects</span></span>
                   </div>
                 </div>
               </div>
-              {bio && <p className="text-[12.5px] text-[var(--fg-dim)] mt-3 leading-relaxed border-t pt-3" style={{ borderColor: 'rgba(255,255,255,0.08)' }}>{bio}</p>}
             </div>
           </div>
+          {!profilePublic && (
+            <p className="text-[11px] text-[var(--fg-mute)] mt-3 leading-relaxed">
+              Profile is currently hidden. Toggle the checkbox on the left to make it public.
+            </p>
+          )}
         </div>
       </div>
     </div>

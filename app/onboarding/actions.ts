@@ -6,7 +6,6 @@ import { supabaseServer, supabaseAdmin } from '@/lib/supabase/server'
 interface SavePayload {
   avatarUrl:     string
   bannerUrl:     string
-  bio:           string
   profilePublic: boolean
 }
 
@@ -32,7 +31,6 @@ export async function saveOnboarding(p: SavePayload): Promise<{ ok: boolean; err
     .update({
       avatar_url:     safeUrl(p.avatarUrl),
       banner_url:     safeUrl(p.bannerUrl),
-      bio:            p.bio?.slice(0, 500) || null,
       profile_public: !!p.profilePublic,
     } as never)
     .eq('id', user.id)
@@ -40,6 +38,8 @@ export async function saveOnboarding(p: SavePayload): Promise<{ ok: boolean; err
   if (error) return { ok: false, error: error.message }
 
   revalidatePath('/onboarding')
+  revalidatePath('/dashboard')
+  revalidatePath('/dashboard/account')
   return { ok: true }
 }
 

@@ -4,6 +4,7 @@ import { Topbar } from '@/components/Topbar'
 import { AnnouncementBar } from '@/components/AnnouncementBar'
 import { AntiInspect } from '@/components/AntiInspect'
 import { HelpBubble } from '@/components/HelpBubble'
+import { GuidedTour } from '@/components/GuidedTour'
 
 interface Profile {
   username:      string
@@ -102,6 +103,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
         </div>
       </main>
       <HelpBubble />
+      <GuidedTour enabled={!!user} />
     </div>
   )
 }

@@ -4,6 +4,8 @@ import { supabaseServer } from '@/lib/supabase/server'
 import { formatPrice, formatDate } from '@/lib/utils'
 import { Pill } from '@/components/ui/Pill'
 import { LinkDiscordSection } from './LinkDiscordSection'
+import { AvatarEditor } from './AvatarEditor'
+import { ReplayTourButton } from './ReplayTourButton'
 
 export const dynamic = 'force-dynamic'
 
@@ -55,21 +57,18 @@ export default async function AccountPage() {
 
       {/* Identity */}
       <div className="card p-6 mb-5">
-        <div className="flex items-center gap-4 pb-5 mb-5 border-b" style={{ borderColor: 'var(--hairline)' }}>
-          <div
-            className="w-14 h-14 rounded-full flex items-center justify-center text-[22px] font-bold overflow-hidden shrink-0"
-            style={{
-              background: profile?.avatar_url ? `url(${profile.avatar_url}) center/cover` : 'var(--brand-gradient)',
-              color: '#3a2630',
-            }}
-          >
-            {!profile?.avatar_url && (profile?.username ?? 'U')[0].toUpperCase()}
+        <div className="flex items-center justify-between gap-4 pb-5 mb-5 border-b flex-wrap" style={{ borderColor: 'var(--hairline)' }}>
+          <AvatarEditor
+            username={profile?.username ?? 'U'}
+            currentUrl={profile?.avatar_url ?? null}
+          />
+          <div className="flex items-center gap-3 ml-auto">
+            <div className="text-right hidden sm:block">
+              <h2 className="text-[16px] font-bold truncate">{profile?.username}</h2>
+              <p className="text-[11.5px] text-[var(--fg-dim)] truncate font-mono">{profile?.email}</p>
+            </div>
+            <RoleBadge role={profile?.role ?? 'user'} />
           </div>
-          <div className="flex-1 min-w-0">
-            <h2 className="text-[18px] font-bold truncate">{profile?.username}</h2>
-            <p className="text-[12.5px] text-[var(--fg-dim)] truncate font-mono">{profile?.email}</p>
-          </div>
-          <RoleBadge role={profile?.role ?? 'user'} />
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
@@ -82,15 +81,16 @@ export default async function AccountPage() {
         </div>
 
         <div className="mt-5 pt-5 border-t flex items-center gap-3 flex-wrap" style={{ borderColor: 'var(--hairline)' }}>
-          <Link href="/onboarding?skip=0" className="btn btn-secondary btn-sm">
-            Edit profile <ArrowRight size={11} />
-          </Link>
           <Link href="/dashboard/balance" className="btn btn-secondary btn-sm">
-            Top-up wallet <Wallet size={11} />
+            <Wallet size={11} /> Top up wallet
           </Link>
           <Link href="/dashboard/notifications" className="btn btn-secondary btn-sm">
-            Notifications <Bell size={11} />
+            <Bell size={11} /> Notifications
           </Link>
+          <Link href="/onboarding?skip=0" className="btn btn-secondary btn-sm">
+            Re-run onboarding <ArrowRight size={11} />
+          </Link>
+          <ReplayTourButton />
         </div>
       </div>
 
