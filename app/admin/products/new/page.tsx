@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { ChevronLeft } from 'lucide-react'
-import { ProductForm } from '../ProductForm'
+import { ProductWizard } from './ProductWizard'
 
 export const metadata = { title: 'New product · Admin' }
 
@@ -11,13 +11,13 @@ export default function NewProductPage() {
         <ChevronLeft size={13} /> All products
       </Link>
 
-      <div className="mb-6">
+      <div className="mb-8">
         <p className="label-mono mb-2">New product</p>
-        <h1 className="text-[24px] font-bold tracking-tight">Create product</h1>
-        <p className="text-[13px] text-[var(--fg-dim)] mt-1">It&apos;ll appear publicly on /products once Active. Slug is auto-generated from the name.</p>
+        <h1 className="text-[24px] font-bold tracking-tight">Add a product to your store</h1>
+        <p className="text-[13px] text-[var(--fg-dim)] mt-1">5 quick steps. You can edit everything later.</p>
       </div>
 
-      <ProductForm />
+      <ProductWizard />
     </div>
   )
 }
