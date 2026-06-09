@@ -8,14 +8,16 @@ export function PublicShell({ children, wide = false }: { children: React.ReactN
       <header
         className="sticky top-0 z-40"
         style={{
-          background: 'rgba(10,13,20,0.72)',
-          backdropFilter: 'blur(18px) saturate(180%)',
-          WebkitBackdropFilter: 'blur(18px) saturate(180%)',
-          borderBottom: '1px solid rgba(42,49,66,0.6)',
+          background:
+            'linear-gradient(180deg, rgba(10,13,20,0.85) 0%, rgba(10,13,20,0.72) 100%)',
+          backdropFilter: 'blur(20px) saturate(180%)',
+          WebkitBackdropFilter: 'blur(20px) saturate(180%)',
+          borderBottom: '1px solid rgba(42,49,66,0.50)',
+          boxShadow: '0 1px 0 rgba(255,255,255,0.04) inset, 0 8px 32px rgba(0,0,0,0.30)',
         }}
       >
-        <div className="container-x flex items-center justify-between py-3.5 gap-6">
-          <Logo size="sm" />
+        <div className="container-x flex items-center justify-between py-5 gap-6">
+          <Logo size="md" />
           <PublicHeaderNav />
         </div>
       </header>

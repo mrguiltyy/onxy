@@ -64,14 +64,19 @@ export default async function HomePage() {
       <header
         className="sticky top-0 z-40"
         style={{
-          background: 'rgba(10,13,20,0.72)',
-          backdropFilter: 'blur(18px) saturate(180%)',
-          WebkitBackdropFilter: 'blur(18px) saturate(180%)',
-          borderBottom: '1px solid rgba(42,49,66,0.6)',
+          background:
+            'linear-gradient(180deg, rgba(10,13,20,0.85) 0%, rgba(10,13,20,0.72) 100%)',
+          backdropFilter: 'blur(20px) saturate(180%)',
+          WebkitBackdropFilter: 'blur(20px) saturate(180%)',
+          borderBottom: '1px solid rgba(42,49,66,0.50)',
+          boxShadow: '0 1px 0 rgba(255,255,255,0.04) inset, 0 8px 32px rgba(0,0,0,0.30)',
         }}
       >
-        <div className="container-x flex items-center justify-between py-3.5 gap-6">
-          <Logo size="sm" />
+        <div className="container-x flex items-center justify-between py-5 gap-6">
+          {/* Bigger logo */}
+          <Logo size="md" />
+
+          {/* Centered nav with bigger text + pill hover */}
           <nav className="hidden md:flex items-center gap-1 flex-1 justify-center">
             <NavLink href="/products" label="Products" />
             <NavLink href="/reseller" label="Reseller" />
@@ -79,37 +84,43 @@ export default async function HomePage() {
             <NavLink href="/blog"     label="Blog" />
             <NavLink href="/faq"      label="FAQ" />
           </nav>
-          <div className="flex items-center gap-2 shrink-0">
+
+          {/* Bigger CTAs */}
+          <div className="flex items-center gap-3 shrink-0">
             {signedIn ? (
               <Link
                 href="/dashboard"
-                className="inline-flex items-center gap-1.5 px-4 py-1.5 text-[13px] font-semibold rounded-full transition-all hover:shadow-[0_8px_24px_rgba(240,164,183,0.32)]"
+                className="inline-flex items-center gap-2 px-6 py-2.5 text-[14px] font-bold rounded-full transition-all hover:shadow-[0_12px_32px_rgba(240,164,183,0.40)] hover:-translate-y-0.5"
                 style={{
                   background: 'linear-gradient(135deg, #f0a4b7 0%, #c5b3df 50%, #a2c8ee 100%)',
                   color: '#1a0e14',
-                  border: '1px solid rgba(255,255,255,0.10)',
+                  border: '1px solid rgba(255,255,255,0.12)',
+                  letterSpacing: '-0.01em',
+                  boxShadow: '0 6px 18px rgba(240,164,183,0.25), 0 0 0 1px rgba(255,255,255,0.06) inset',
                 }}
               >
-                Dashboard <ArrowRight size={12} />
+                Dashboard <ArrowRight size={14} strokeWidth={2.5} />
               </Link>
             ) : (
               <>
                 <Link
                   href="/login"
-                  className="px-3.5 py-1.5 text-[13px] font-medium rounded-full transition-colors text-[var(--fg-dim)] hover:text-[var(--fg)] hover:bg-[var(--surface-2)]"
+                  className="hidden sm:inline-flex px-4 py-2 text-[14px] font-semibold rounded-full transition-all text-[var(--fg-dim)] hover:text-[var(--fg)] hover:bg-[var(--surface-2)]"
                 >
                   Sign in
                 </Link>
                 <Link
                   href="/register"
-                  className="inline-flex items-center gap-1.5 px-4 py-1.5 text-[13px] font-semibold rounded-full transition-all hover:shadow-[0_8px_24px_rgba(240,164,183,0.32)]"
+                  className="inline-flex items-center gap-2 px-6 py-2.5 text-[14px] font-bold rounded-full transition-all hover:shadow-[0_12px_32px_rgba(240,164,183,0.40)] hover:-translate-y-0.5"
                   style={{
                     background: 'linear-gradient(135deg, #f0a4b7 0%, #c5b3df 50%, #a2c8ee 100%)',
                     color: '#1a0e14',
-                    border: '1px solid rgba(255,255,255,0.10)',
+                    border: '1px solid rgba(255,255,255,0.12)',
+                    letterSpacing: '-0.01em',
+                    boxShadow: '0 6px 18px rgba(240,164,183,0.25), 0 0 0 1px rgba(255,255,255,0.06) inset',
                   }}
                 >
-                  Get started <ArrowRight size={12} />
+                  Get started <ArrowRight size={14} strokeWidth={2.5} />
                 </Link>
               </>
             )}
@@ -425,9 +436,14 @@ function NavLink({ href, label }: { href: string; label: string }) {
   return (
     <Link
       href={href}
-      className="px-3.5 py-1.5 text-[13px] font-medium rounded-full transition-all text-[var(--fg-dim)] hover:text-[var(--fg)] hover:bg-[var(--surface-2)]"
+      className="relative px-4 py-2 text-[14px] font-semibold rounded-full transition-all text-[var(--fg-dim)] hover:text-[var(--fg)] hover:bg-[var(--surface-2)] group"
+      style={{ letterSpacing: '-0.01em' }}
     >
       {label}
+      <span
+        className="absolute left-1/2 -translate-x-1/2 bottom-0 w-0 h-0.5 rounded-full group-hover:w-4 transition-all"
+        style={{ background: 'var(--brand)' }}
+      />
     </Link>
   )
 }

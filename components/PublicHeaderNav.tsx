@@ -16,7 +16,6 @@ export function PublicHeaderNav() {
   const pathname = usePathname()
   const [mobileOpen, setMobileOpen] = useState(false)
 
-  // Close mobile menu on route change
   useEffect(() => { setMobileOpen(false) }, [pathname])
 
   return (
@@ -29,52 +28,57 @@ export function PublicHeaderNav() {
             <Link
               key={link.href}
               href={link.href}
-              className="px-3.5 py-1.5 text-[13px] font-medium rounded-full transition-all relative"
+              className="relative px-4 py-2 text-[14px] font-semibold rounded-full transition-all group"
               style={{
-                color: active ? 'var(--fg)' : 'var(--fg-dim)',
+                color:      active ? 'var(--fg)' : 'var(--fg-dim)',
                 background: active ? 'var(--surface-2)' : 'transparent',
+                letterSpacing: '-0.01em',
               }}
             >
               {link.label}
-              {active && (
-                <span
-                  className="absolute left-1/2 -translate-x-1/2 -bottom-1 w-1 h-1 rounded-full"
-                  style={{ background: 'var(--brand)' }}
-                />
-              )}
+              <span
+                className="absolute left-1/2 -translate-x-1/2 bottom-0 h-0.5 rounded-full transition-all"
+                style={{
+                  background: 'var(--brand)',
+                  width: active ? '16px' : '0',
+                }}
+              />
             </Link>
           )
         })}
       </nav>
 
       {/* Right CTAs (desktop) */}
-      <div className="hidden md:flex items-center gap-2 shrink-0">
+      <div className="hidden md:flex items-center gap-3 shrink-0">
         <Link
           href="/login"
-          className="px-3.5 py-1.5 text-[13px] font-medium rounded-full transition-colors text-[var(--fg-dim)] hover:text-[var(--fg)] hover:bg-[var(--surface-2)]"
+          className="px-4 py-2 text-[14px] font-semibold rounded-full transition-colors text-[var(--fg-dim)] hover:text-[var(--fg)] hover:bg-[var(--surface-2)]"
+          style={{ letterSpacing: '-0.01em' }}
         >
           Sign in
         </Link>
         <Link
           href="/register"
-          className="inline-flex items-center gap-1.5 px-4 py-1.5 text-[13px] font-semibold rounded-full transition-all hover:shadow-[0_8px_24px_rgba(240,164,183,0.32)]"
+          className="inline-flex items-center gap-2 px-6 py-2.5 text-[14px] font-bold rounded-full transition-all hover:shadow-[0_12px_32px_rgba(240,164,183,0.40)] hover:-translate-y-0.5"
           style={{
             background:  'linear-gradient(135deg, #f0a4b7 0%, #c5b3df 50%, #a2c8ee 100%)',
             color:       '#1a0e14',
-            border:      '1px solid rgba(255,255,255,0.10)',
+            border:      '1px solid rgba(255,255,255,0.12)',
+            letterSpacing: '-0.01em',
+            boxShadow:   '0 6px 18px rgba(240,164,183,0.25), 0 0 0 1px rgba(255,255,255,0.06) inset',
           }}
         >
-          Get started <ArrowRight size={12} />
+          Get started <ArrowRight size={14} strokeWidth={2.5} />
         </Link>
       </div>
 
       {/* Mobile burger */}
       <button
         onClick={() => setMobileOpen(!mobileOpen)}
-        className="md:hidden p-2 rounded-md hover:bg-[var(--surface-2)] transition-colors text-[var(--fg-dim)]"
+        className="md:hidden p-2.5 rounded-lg hover:bg-[var(--surface-2)] transition-colors text-[var(--fg-dim)]"
         aria-label="Menu"
       >
-        {mobileOpen ? <X size={18} /> : <Menu size={18} />}
+        {mobileOpen ? <X size={20} /> : <Menu size={20} />}
       </button>
 
       {/* Mobile dropdown */}
@@ -82,22 +86,23 @@ export function PublicHeaderNav() {
         <div
           className="md:hidden absolute left-0 right-0 top-full"
           style={{
-            background: 'rgba(10,13,20,0.95)',
-            backdropFilter: 'blur(18px) saturate(180%)',
+            background: 'rgba(10,13,20,0.96)',
+            backdropFilter: 'blur(20px) saturate(180%)',
             borderBottom: '1px solid var(--hairline)',
           }}
         >
-          <div className="container-x py-4 flex flex-col gap-1">
+          <div className="container-x py-5 flex flex-col gap-1.5">
             {LINKS.map(link => {
               const active = pathname === link.href || (link.href !== '/' && pathname.startsWith(link.href + '/'))
               return (
                 <Link
                   key={link.href}
                   href={link.href}
-                  className="px-3 py-2.5 text-[14px] font-medium rounded-md transition-colors"
+                  className="px-4 py-3 text-[15px] font-semibold rounded-lg transition-colors"
                   style={{
-                    color: active ? 'var(--brand)' : 'var(--fg-dim)',
+                    color:      active ? 'var(--brand)' : 'var(--fg-dim)',
                     background: active ? 'var(--brand-faint)' : 'transparent',
+                    letterSpacing: '-0.01em',
                   }}
                 >
                   {link.label}
@@ -105,20 +110,21 @@ export function PublicHeaderNav() {
               )
             })}
 
-            <div className="border-t mt-3 pt-3 flex gap-2" style={{ borderColor: 'var(--hairline)' }}>
-              <Link href="/login" className="flex-1 text-center py-2.5 text-[13.5px] font-medium rounded-md transition-colors text-[var(--fg-dim)] hover:bg-[var(--surface-2)]"
+            <div className="border-t mt-4 pt-4 flex gap-2.5" style={{ borderColor: 'var(--hairline)' }}>
+              <Link href="/login" className="flex-1 text-center py-3 text-[14px] font-semibold rounded-lg transition-colors text-[var(--fg-dim)] hover:bg-[var(--surface-2)]"
                 style={{ border: '1px solid var(--hairline)' }}>
                 Sign in
               </Link>
               <Link
                 href="/register"
-                className="flex-1 inline-flex items-center justify-center gap-1.5 py-2.5 text-[13.5px] font-semibold rounded-md transition-all"
+                className="flex-1 inline-flex items-center justify-center gap-2 py-3 text-[14px] font-bold rounded-lg transition-all"
                 style={{
                   background: 'linear-gradient(135deg, #f0a4b7 0%, #c5b3df 50%, #a2c8ee 100%)',
                   color:      '#1a0e14',
+                  boxShadow:  '0 6px 18px rgba(240,164,183,0.25)',
                 }}
               >
-                Get started <ArrowRight size={12} />
+                Get started <ArrowRight size={14} strokeWidth={2.5} />
               </Link>
             </div>
           </div>

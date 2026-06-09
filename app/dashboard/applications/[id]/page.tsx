@@ -83,26 +83,28 @@ export default async function AppDetailPage({ params }: { params: Promise<{ id: 
       </Link>
 
       {/* Header */}
-      <div className="mb-8 flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-3 mb-2">
-            <h1 className="text-[26px] font-bold tracking-tight">{app.name}</h1>
-            <Pill tone={app.status === 'active' ? 'ok' : 'warn'}>{app.status}</Pill>
-            {app.freeze_users && <Pill tone="bad">frozen</Pill>}
-          </div>
-          {app.description && <p className="text-[13.5px] text-[var(--fg-dim)]">{app.description}</p>}
-          <p className="text-[11.5px] text-[var(--fg-mute)] mt-2 font-mono">
-            app_id: <span className="text-[var(--brand)]">{app.app_id}</span> &nbsp;·&nbsp; version {app.version} &nbsp;·&nbsp; created {relativeTime(app.created_at)}
-          </p>
+      <div className="mb-8">
+        <div className="flex items-center gap-3 mb-2 flex-wrap">
+          <h1 className="text-[24px] md:text-[28px] font-bold tracking-tight">{app.name}</h1>
+          <Pill tone={app.status === 'active' ? 'ok' : 'warn'}>{app.status}</Pill>
+          {app.freeze_users && <Pill tone="bad">frozen</Pill>}
         </div>
+        {app.description && <p className="text-[13.5px] text-[var(--fg-dim)] mb-2">{app.description}</p>}
+        <p className="text-[11.5px] text-[var(--fg-mute)] font-mono break-all">
+          app_id: <span className="text-[var(--brand)]">{app.app_id}</span> &nbsp;·&nbsp; version {app.version} &nbsp;·&nbsp; created {relativeTime(app.created_at)}
+        </p>
 
-        <div className="flex items-center gap-2">
+        {/* Actions row — separate line, wraps cleanly */}
+        <div className="flex items-center gap-2 flex-wrap mt-5 pt-5 border-t"
+          style={{ borderColor: 'var(--hairline)' }}>
           <Link href={`/dashboard/docs?app=${app.app_id}`} className="btn btn-secondary btn-sm">
             <BookOpen size={13} /> Docs
           </Link>
           <ToggleStatusButton appId={app.id} status={app.status as 'active' | 'paused'} />
           <RotateSecretButton appId={app.id} />
-          <DeleteAppButton appId={app.id} name={app.name} />
+          <div className="ml-auto">
+            <DeleteAppButton appId={app.id} name={app.name} />
+          </div>
         </div>
       </div>
 

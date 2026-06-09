@@ -66,22 +66,23 @@ export default async function AdminProductDetailPage({ params }: { params: Promi
         <ChevronLeft size={13} /> All products
       </Link>
 
-      <div className="mb-6 flex items-start justify-between gap-4 flex-wrap">
-        <div>
-          <div className="flex items-center gap-3 mb-1">
-            <h1 className="text-[24px] font-bold tracking-tight">{product.name}</h1>
-            <Pill tone={product.status === 'active' ? 'ok' : product.status === 'paused' ? 'warn' : 'bad'}>{product.status}</Pill>
-          </div>
-          <p className="text-[12.5px] text-[var(--fg-dim)] font-mono">
-            slug: <span className="text-[var(--brand)]">{product.slug}</span> · v{product.version}
-          </p>
+      <div className="mb-6">
+        <div className="flex items-center gap-3 mb-1 flex-wrap">
+          <h1 className="text-[24px] font-bold tracking-tight">{product.name}</h1>
+          <Pill tone={product.status === 'active' ? 'ok' : product.status === 'paused' ? 'warn' : 'bad'}>{product.status}</Pill>
         </div>
-        <div className="flex items-center gap-2">
+        <p className="text-[12.5px] text-[var(--fg-dim)] font-mono break-all">
+          slug: <span className="text-[var(--brand)]">{product.slug}</span> · v{product.version}
+        </p>
+        <div className="flex items-center gap-2 flex-wrap mt-5 pt-5 border-t"
+          style={{ borderColor: 'var(--hairline)' }}>
           <Link href={`/products/${product.slug}`} target="_blank" className="btn btn-secondary btn-sm">
             <ExternalLink size={12} /> Public page
           </Link>
           <PublishUpdateButton productId={product.id} currentVersion={product.version} />
-          <DeleteProductButton productId={product.id} name={product.name} />
+          <div className="ml-auto">
+            <DeleteProductButton productId={product.id} name={product.name} />
+          </div>
         </div>
       </div>
 
