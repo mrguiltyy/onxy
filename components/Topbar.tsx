@@ -1,7 +1,7 @@
 'use client'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, KeyRound, Plus, Wallet, User, ChevronDown, MessageSquare, Shield, Boxes, BookOpen, Store, LifeBuoy } from 'lucide-react'
+import { LayoutDashboard, KeyRound, Plus, Wallet, User, ChevronDown, MessageSquare, Shield, Boxes, BookOpen, Store, LifeBuoy, Calendar } from 'lucide-react'
 import { cn, formatPrice } from '@/lib/utils'
 import { Logo } from './Logo'
 import { NotificationBell } from './NotificationBell'
@@ -25,8 +25,9 @@ interface TopbarProps {
 }
 
 const baseTabs = [
-  { href: '/dashboard',           icon: LayoutDashboard, label: 'Dashboard' },
-  { href: '/dashboard/licenses',  icon: KeyRound,        label: 'Licenses'  },
+  { href: '/dashboard',                icon: LayoutDashboard, label: 'Dashboard'     },
+  { href: '/dashboard/subscriptions',  icon: Calendar,        label: 'Subscriptions' },
+  { href: '/dashboard/licenses',       icon: KeyRound,        label: 'Licenses'      },
   { href: '/dashboard/generate',  icon: Plus,            label: 'Generate'  },
   { href: '/dashboard/balance',   icon: Wallet,          label: 'Top-up'    },
   { href: '/dashboard/troubleshoot', icon: LifeBuoy,     label: 'Help'      },

@@ -5,7 +5,7 @@ import { PublicShell } from '@/components/PublicShell'
 import { supabaseAdmin, supabaseServer } from '@/lib/supabase/server'
 import { formatPrice } from '@/lib/utils'
 import { ResellApplicationButton } from './ResellApplicationButton'
-import { BuyButton } from './BuyButton'
+import { SubscribeButton } from './SubscribeButton'
 
 export const dynamic = 'force-dynamic'
 
@@ -17,6 +17,7 @@ interface Product {
   description:              string | null
   image_url:                string | null
   category:                 string
+  product_type:             string
   version:                  string
   price_day:                number | null
   price_week:               number | null
@@ -32,6 +33,9 @@ interface Product {
   cta_label:                string | null
   cta_color:                string | null
 }
+
+interface ActiveSubRow { expires_at: string | null }
+interface ProfileBalance { balance_cents: number }
 
 interface Update {
   id:         string
@@ -74,17 +78,40 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
     .limit(5)
   const updates = (updatesRaw ?? []) as Update[]
 
-  // Logged-in context (for the resell button)
+  // Logged-in context
   const supa = await supabaseServer()
   const { data: { user } } = await supa.auth.getUser()
   let role: string | null = null
   let existingGrantStatus: string | null = null
+  let walletCents = 0
+  let activeSubExpiresAt: string | null = null
+  let hasActiveSub = false
+
   if (user) {
-    const { data: profRaw } = await supa.from('profiles').select('role').eq('id', user.id).maybeSingle()
-    role = (profRaw as Profile | null)?.role ?? null
-    const { data: grantRaw } = await supa.from('reseller_grants')
-      .select('status').eq('product_id', product.id).eq('reseller_id', user.id).maybeSingle()
-    existingGrantStatus = (grantRaw as Grant | null)?.status ?? null
+    const { data: profRaw } = await supa.from('profiles').select('role, balance_cents').eq('id', user.id).maybeSingle()
+    role = (profRaw as (Profile & ProfileBalance) | null)?.role ?? null
+    walletCents = (profRaw as ProfileBalance | null)?.balance_cents ?? 0
+
+    try {
+      const { data: grantRaw } = await supa.from('reseller_grants')
+        .select('status').eq('product_id', product.id).eq('reseller_id', user.id).maybeSingle()
+      existingGrantStatus = (grantRaw as Grant | null)?.status ?? null
+    } catch {}
+
+    // Check active subscription
+    try {
+      const admin2 = supabaseAdmin()
+      const { data: subRaw } = await admin2.from('subscriptions')
+        .select('expires_at')
+        .eq('user_id', user.id).eq('product_id', product.id).eq('status', 'active')
+        .order('expires_at', { ascending: false, nullsFirst: false })
+        .limit(1).maybeSingle()
+      const sub = subRaw as ActiveSubRow | null
+      if (sub) {
+        hasActiveSub = sub.expires_at === null || new Date(sub.expires_at) > new Date()
+        activeSubExpiresAt = sub.expires_at
+      }
+    } catch { /* subs table may not exist yet */ }
   }
 
   return (
@@ -200,17 +227,20 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
               <PriceRow label="Lifetime"   cents={product.price_lifetime} icon={<Infinity size={11} />} highlight />
             </div>
             <div className="mt-4">
-              <BuyButton
+              <SubscribeButton
                 productId={product.id}
+                productName={product.name}
+                productType={product.product_type ?? 'tool'}
                 signedIn={!!user}
+                walletCents={walletCents}
                 prices={{
                   day:      product.price_day,
                   week:     product.price_week,
                   month:    product.price_month,
                   lifetime: product.price_lifetime,
                 }}
-                ctaLabel={product.cta_label}
-                ctaColor={product.cta_color}
+                hasActiveSub={hasActiveSub}
+                currentExpiresAt={activeSubExpiresAt}
               />
             </div>
           </div>
