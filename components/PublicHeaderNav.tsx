@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { ArrowRight, Menu, X } from 'lucide-react'
+import { ArrowRight, Menu, X, LayoutDashboard } from 'lucide-react'
 
 const LINKS: { href: string; label: string }[] = [
   { href: '/products', label: 'Products' },
@@ -12,7 +12,9 @@ const LINKS: { href: string; label: string }[] = [
   { href: '/faq',      label: 'FAQ'      },
 ]
 
-export function PublicHeaderNav() {
+const PILL_GRADIENT = 'linear-gradient(135deg, #f0a4b7 0%, #c5b3df 50%, #a2c8ee 100%)'
+
+export function PublicHeaderNav({ signedIn = false }: { signedIn?: boolean }) {
   const pathname = usePathname()
   const [mobileOpen, setMobileOpen] = useState(false)
 
@@ -50,26 +52,44 @@ export function PublicHeaderNav() {
 
       {/* Right CTAs (desktop) */}
       <div className="hidden md:flex items-center gap-3 shrink-0">
-        <Link
-          href="/login"
-          className="px-4 py-2 text-[14px] font-semibold rounded-full transition-colors text-[var(--fg-dim)] hover:text-[var(--fg)] hover:bg-[var(--surface-2)]"
-          style={{ letterSpacing: '-0.01em' }}
-        >
-          Sign in
-        </Link>
-        <Link
-          href="/register"
-          className="inline-flex items-center gap-2 px-6 py-2.5 text-[14px] font-bold rounded-full transition-all hover:shadow-[0_12px_32px_rgba(240,164,183,0.40)] hover:-translate-y-0.5"
-          style={{
-            background:  'linear-gradient(135deg, #f0a4b7 0%, #c5b3df 50%, #a2c8ee 100%)',
-            color:       '#1a0e14',
-            border:      '1px solid rgba(255,255,255,0.12)',
-            letterSpacing: '-0.01em',
-            boxShadow:   '0 6px 18px rgba(240,164,183,0.25), 0 0 0 1px rgba(255,255,255,0.06) inset',
-          }}
-        >
-          Get started <ArrowRight size={14} strokeWidth={2.5} />
-        </Link>
+        {signedIn ? (
+          <Link
+            href="/dashboard"
+            className="inline-flex items-center gap-2 px-6 py-2.5 text-[14px] font-bold rounded-full transition-all hover:shadow-[0_12px_32px_rgba(240,164,183,0.40)] hover:-translate-y-0.5"
+            style={{
+              background:  PILL_GRADIENT,
+              color:       '#1a0e14',
+              border:      '1px solid rgba(255,255,255,0.12)',
+              letterSpacing: '-0.01em',
+              boxShadow:   '0 6px 18px rgba(240,164,183,0.25), 0 0 0 1px rgba(255,255,255,0.06) inset',
+            }}
+          >
+            <LayoutDashboard size={14} strokeWidth={2.5} /> Dashboard
+          </Link>
+        ) : (
+          <>
+            <Link
+              href="/login"
+              className="px-4 py-2 text-[14px] font-semibold rounded-full transition-colors text-[var(--fg-dim)] hover:text-[var(--fg)] hover:bg-[var(--surface-2)]"
+              style={{ letterSpacing: '-0.01em' }}
+            >
+              Sign in
+            </Link>
+            <Link
+              href="/register"
+              className="inline-flex items-center gap-2 px-6 py-2.5 text-[14px] font-bold rounded-full transition-all hover:shadow-[0_12px_32px_rgba(240,164,183,0.40)] hover:-translate-y-0.5"
+              style={{
+                background:  PILL_GRADIENT,
+                color:       '#1a0e14',
+                border:      '1px solid rgba(255,255,255,0.12)',
+                letterSpacing: '-0.01em',
+                boxShadow:   '0 6px 18px rgba(240,164,183,0.25), 0 0 0 1px rgba(255,255,255,0.06) inset',
+              }}
+            >
+              Get started <ArrowRight size={14} strokeWidth={2.5} />
+            </Link>
+          </>
+        )}
       </div>
 
       {/* Mobile burger */}
@@ -111,21 +131,37 @@ export function PublicHeaderNav() {
             })}
 
             <div className="border-t mt-4 pt-4 flex gap-2.5" style={{ borderColor: 'var(--hairline)' }}>
-              <Link href="/login" className="flex-1 text-center py-3 text-[14px] font-semibold rounded-lg transition-colors text-[var(--fg-dim)] hover:bg-[var(--surface-2)]"
-                style={{ border: '1px solid var(--hairline)' }}>
-                Sign in
-              </Link>
-              <Link
-                href="/register"
-                className="flex-1 inline-flex items-center justify-center gap-2 py-3 text-[14px] font-bold rounded-lg transition-all"
-                style={{
-                  background: 'linear-gradient(135deg, #f0a4b7 0%, #c5b3df 50%, #a2c8ee 100%)',
-                  color:      '#1a0e14',
-                  boxShadow:  '0 6px 18px rgba(240,164,183,0.25)',
-                }}
-              >
-                Get started <ArrowRight size={14} strokeWidth={2.5} />
-              </Link>
+              {signedIn ? (
+                <Link
+                  href="/dashboard"
+                  className="flex-1 inline-flex items-center justify-center gap-2 py-3 text-[14px] font-bold rounded-lg transition-all"
+                  style={{
+                    background: PILL_GRADIENT,
+                    color:      '#1a0e14',
+                    boxShadow:  '0 6px 18px rgba(240,164,183,0.25)',
+                  }}
+                >
+                  <LayoutDashboard size={14} strokeWidth={2.5} /> Dashboard
+                </Link>
+              ) : (
+                <>
+                  <Link href="/login" className="flex-1 text-center py-3 text-[14px] font-semibold rounded-lg transition-colors text-[var(--fg-dim)] hover:bg-[var(--surface-2)]"
+                    style={{ border: '1px solid var(--hairline)' }}>
+                    Sign in
+                  </Link>
+                  <Link
+                    href="/register"
+                    className="flex-1 inline-flex items-center justify-center gap-2 py-3 text-[14px] font-bold rounded-lg transition-all"
+                    style={{
+                      background: PILL_GRADIENT,
+                      color:      '#1a0e14',
+                      boxShadow:  '0 6px 18px rgba(240,164,183,0.25)',
+                    }}
+                  >
+                    Get started <ArrowRight size={14} strokeWidth={2.5} />
+                  </Link>
+                </>
+              )}
             </div>
           </div>
         </div>

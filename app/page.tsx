@@ -3,6 +3,7 @@ import { ArrowRight, Cpu, Zap, Activity, RefreshCw, Lock, Star, Check, Crown, St
 import { supabaseServer, supabaseAdmin } from '@/lib/supabase/server'
 import { Brand } from '@/components/Brand'
 import { Logo } from '@/components/Logo'
+import { PublicHeaderNav } from '@/components/PublicHeaderNav'
 import { formatPrice, relativeTime } from '@/lib/utils'
 
 export const dynamic = 'force-dynamic'
@@ -72,59 +73,9 @@ export default async function HomePage() {
           boxShadow: '0 1px 0 rgba(255,255,255,0.04) inset, 0 8px 32px rgba(0,0,0,0.30)',
         }}
       >
-        <div className="container-x flex items-center justify-between py-5 gap-6">
-          {/* Bigger logo */}
+        <div className="container-x flex items-center justify-between py-5 gap-6 relative">
           <Logo size="md" />
-
-          {/* Centered nav with bigger text + pill hover */}
-          <nav className="hidden md:flex items-center gap-1 flex-1 justify-center">
-            <NavLink href="/products" label="Products" />
-            <NavLink href="/reseller" label="Reseller" />
-            <NavLink href="/rebrand"  label="Rebrand" />
-            <NavLink href="/blog"     label="Blog" />
-            <NavLink href="/faq"      label="FAQ" />
-          </nav>
-
-          {/* Bigger CTAs */}
-          <div className="flex items-center gap-3 shrink-0">
-            {signedIn ? (
-              <Link
-                href="/dashboard"
-                className="inline-flex items-center gap-2 px-6 py-2.5 text-[14px] font-bold rounded-full transition-all hover:shadow-[0_12px_32px_rgba(240,164,183,0.40)] hover:-translate-y-0.5"
-                style={{
-                  background: 'linear-gradient(135deg, #f0a4b7 0%, #c5b3df 50%, #a2c8ee 100%)',
-                  color: '#1a0e14',
-                  border: '1px solid rgba(255,255,255,0.12)',
-                  letterSpacing: '-0.01em',
-                  boxShadow: '0 6px 18px rgba(240,164,183,0.25), 0 0 0 1px rgba(255,255,255,0.06) inset',
-                }}
-              >
-                Dashboard <ArrowRight size={14} strokeWidth={2.5} />
-              </Link>
-            ) : (
-              <>
-                <Link
-                  href="/login"
-                  className="hidden sm:inline-flex px-4 py-2 text-[14px] font-semibold rounded-full transition-all text-[var(--fg-dim)] hover:text-[var(--fg)] hover:bg-[var(--surface-2)]"
-                >
-                  Sign in
-                </Link>
-                <Link
-                  href="/register"
-                  className="inline-flex items-center gap-2 px-6 py-2.5 text-[14px] font-bold rounded-full transition-all hover:shadow-[0_12px_32px_rgba(240,164,183,0.40)] hover:-translate-y-0.5"
-                  style={{
-                    background: 'linear-gradient(135deg, #f0a4b7 0%, #c5b3df 50%, #a2c8ee 100%)',
-                    color: '#1a0e14',
-                    border: '1px solid rgba(255,255,255,0.12)',
-                    letterSpacing: '-0.01em',
-                    boxShadow: '0 6px 18px rgba(240,164,183,0.25), 0 0 0 1px rgba(255,255,255,0.06) inset',
-                  }}
-                >
-                  Get started <ArrowRight size={14} strokeWidth={2.5} />
-                </Link>
-              </>
-            )}
-          </div>
+          <PublicHeaderNav signedIn={signedIn} />
         </div>
       </header>
 
@@ -140,10 +91,10 @@ export default async function HomePage() {
                 'radial-gradient(ellipse 700px 500px at 80% 60%, rgba(162,200,238,0.10), transparent 65%)',
             }}
           />
-          <div className="container-x relative pt-24 md:pt-32 pb-28">
+          <div className="container-x relative pt-16 md:pt-24 pb-20 md:pb-24">
             <div className="max-w-[820px]">
               <h1
-                className="text-[48px] md:text-[64px] font-bold tracking-tight leading-[1.02] mb-7"
+                className="text-[44px] md:text-[60px] font-bold tracking-tight leading-[1.02] mb-6"
                 style={{ letterSpacing: '-0.035em' }}
               >
                 Private tools, sold the way they{' '}
@@ -318,7 +269,7 @@ export default async function HomePage() {
 
 
         {/* ─── FINAL CTA ─────────────────────────────────────────── */}
-        <section className="py-24 border-t" style={{ borderColor: 'var(--hairline)' }}>
+        <section className="py-20 border-t" style={{ borderColor: 'var(--hairline)' }}>
           <div className="container-x">
             <div
               className="rounded-2xl py-16 px-6 text-center max-w-[760px] mx-auto"
@@ -408,9 +359,9 @@ function Section({ eyebrow, title, description, link, children }: {
   children:    React.ReactNode
 }) {
   return (
-    <section className="py-28 md:py-32 border-t" style={{ borderColor: 'var(--hairline)' }}>
+    <section className="py-20 md:py-24 border-t" style={{ borderColor: 'var(--hairline)' }}>
       <div className="container-x">
-        <header className="flex items-end justify-between gap-6 mb-12 flex-wrap">
+        <header className="flex items-end justify-between gap-6 mb-10 flex-wrap">
           <div className="max-w-[640px]">
             <p className="label-mono mb-3">{eyebrow}</p>
             <h2 className="text-[28px] md:text-[34px] font-bold tracking-tight mb-3" style={{ letterSpacing: '-0.025em' }}>
@@ -432,22 +383,6 @@ function Section({ eyebrow, title, description, link, children }: {
 
 
 /* ─── Sub-components ─────────────────────────────────────────────── */
-function NavLink({ href, label }: { href: string; label: string }) {
-  return (
-    <Link
-      href={href}
-      className="relative px-4 py-2 text-[14px] font-semibold rounded-full transition-all text-[var(--fg-dim)] hover:text-[var(--fg)] hover:bg-[var(--surface-2)] group"
-      style={{ letterSpacing: '-0.01em' }}
-    >
-      {label}
-      <span
-        className="absolute left-1/2 -translate-x-1/2 bottom-0 w-0 h-0.5 rounded-full group-hover:w-4 transition-all"
-        style={{ background: 'var(--brand)' }}
-      />
-    </Link>
-  )
-}
-
 function TierCard({ icon, tier, price, tagline, features, cta, ctaHref, featured }: {
   icon: React.ReactNode; tier: string; price: string; tagline: string; features: string[]; cta: string; ctaHref: string; featured?: boolean;
 }) {
