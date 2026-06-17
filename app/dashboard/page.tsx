@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { KeyRound, Plus, Wallet, Activity, ArrowRight, BookOpen, Boxes, MessageSquare, LifeBuoy, Sparkles, TrendingUp, Calendar, Zap, ChevronRight } from 'lucide-react'
+import { KeyRound, Plus, Wallet, Activity, BookOpen, Boxes, MessageSquare, Sparkles, Zap, ChevronRight } from 'lucide-react'
 import { supabaseServer, supabaseAdmin } from '@/lib/supabase/server'
 import { formatPrice, relativeTime } from '@/lib/utils'
 import { Pill } from '@/components/ui/Pill'
@@ -111,56 +111,64 @@ export default async function DashboardPage() {
         onboardingDone={onboardingDone}
       />
 
-      {/* ── Hero ─ welcome + headline stats ───────────────────────── */}
+      {/* ── Hero — distinctive, not template-y ───────────────────── */}
       <section
-        className="relative overflow-hidden rounded-xl mb-5 p-6 md:p-8"
+        className="relative mb-6 rounded-xl overflow-hidden"
         style={{
-          background:
-            'linear-gradient(135deg, rgba(240,164,183,0.05), rgba(162,200,238,0.05)),' +
-            'var(--surface)',
+          background: 'var(--surface)',
           border: '1px solid var(--hairline)',
         }}
       >
-        {/* Decorative blob */}
+        {/* Subtle key-grid pattern — distinctive vs generic blob */}
         <div
-          className="absolute -right-20 -top-20 w-[260px] h-[260px] rounded-full opacity-40 pointer-events-none"
-          style={{ background: 'radial-gradient(closest-side, rgba(197,179,223,0.30), transparent)', filter: 'blur(20px)' }}
+          className="absolute inset-0 pointer-events-none opacity-[0.04]"
+          style={{
+            backgroundImage:
+              'linear-gradient(to right, var(--fg) 1px, transparent 1px),' +
+              'linear-gradient(to bottom, var(--fg) 1px, transparent 1px)',
+            backgroundSize: '32px 32px',
+            maskImage: 'linear-gradient(to bottom right, black 30%, transparent 80%)',
+          }}
+        />
+        <div
+          className="absolute right-0 top-0 w-[200px] h-full pointer-events-none"
+          style={{
+            background:
+              'linear-gradient(90deg, transparent, rgba(240,164,183,0.06) 60%, rgba(240,164,183,0.10) 100%)',
+          }}
         />
 
-        <div className="relative grid grid-cols-1 md:grid-cols-[1fr_auto] gap-5 items-center">
-          <div>
-            <p className="label-mono mb-2">Dashboard</p>
-            <h1 className="text-[26px] md:text-[30px] font-bold tracking-tight" style={{ letterSpacing: '-0.025em' }}>
-              Hey {profile?.username},{' '}
-              <span style={{
-                background: 'var(--brand-gradient)',
-                WebkitBackgroundClip: 'text',
-                backgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-              }}>welcome back.</span>
+        <div className="relative grid grid-cols-1 md:grid-cols-[1fr_auto] gap-6 items-center p-6 md:p-7">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2 mb-2">
+              <span className="w-1.5 h-1.5 rounded-full" style={{ background: 'var(--brand)' }} />
+              <p className="label-mono">{new Date().toLocaleDateString('en-US', { weekday: 'long' })} · {profile?.role === 'super_admin' ? 'admin' : profile?.role === 'reseller' ? 'reseller' : 'customer'}</p>
+            </div>
+            <h1 className="text-[26px] md:text-[30px] font-bold tracking-tight text-[var(--fg)]" style={{ letterSpacing: '-0.025em' }}>
+              {profile?.username}
             </h1>
-            <p className="text-[13px] text-[var(--fg-dim)] mt-1">
-              Member since {memberSince} · {totalKeys} key{totalKeys === 1 ? '' : 's'} · {yearTotal} event{yearTotal === 1 ? '' : 's'} this year
+            <p className="text-[12.5px] text-[var(--fg-mute)] mt-1 font-mono">
+              {totalKeys} {totalKeys === 1 ? 'key' : 'keys'} · {activeKeys} active · joined {memberSince.toLowerCase()}
             </p>
 
-            <div className="flex items-center gap-3 mt-5 flex-wrap">
+            <div className="flex items-center gap-2 mt-5 flex-wrap">
               <Link href="/dashboard/generate" className="btn btn-primary btn-sm">
                 <Plus size={12} /> New key
               </Link>
               <Link href="/dashboard/balance" className="btn btn-secondary btn-sm">
                 <Wallet size={12} /> Top up
               </Link>
-              <Link href="/dashboard/troubleshoot" className="btn btn-secondary btn-sm">
-                <LifeBuoy size={12} /> Get help
-              </Link>
             </div>
           </div>
 
-          {/* Hero stat tiles */}
-          <div className="grid grid-cols-3 gap-3 md:gap-4">
-            <HeroStat label="Active keys"     value={activeKeys}                  accent="ok" />
-            <HeroStat label="Wallet"          value={formatPrice(profile?.balance_cents ?? 0)} accent="brand" thin />
-            <HeroStat label="Expiring 7d"     value={expiringSoon}                accent={expiringSoon > 0 ? 'warn' : 'mute'} />
+          {/* Compact status panel — no rainbow tiles */}
+          <div
+            className="rounded-lg p-3 md:p-4 min-w-[260px]"
+            style={{ background: 'var(--surface-2)', border: '1px solid var(--hairline)' }}
+          >
+            <StatusRow label="Wallet"       value={formatPrice(profile?.balance_cents ?? 0)} />
+            <StatusRow label="Active keys"  value={activeKeys.toString()} accent={activeKeys > 0 ? 'ok' : undefined} />
+            <StatusRow label="Expiring 7d"  value={expiringSoon.toString()} accent={expiringSoon > 0 ? 'warn' : undefined} last />
           </div>
         </div>
       </section>
@@ -375,21 +383,17 @@ function buildMonthly(timestamps: string[]): { month: string; count: number }[] 
   return out
 }
 
-function HeroStat({ label, value, accent, thin }: { label: string; value: string | number; accent: 'ok' | 'brand' | 'warn' | 'mute'; thin?: boolean }) {
-  const c =
-    accent === 'ok'   ? 'var(--ok)' :
-    accent === 'warn' ? 'var(--warn)' :
-    accent === 'mute' ? 'var(--fg-dim)' :
-                        'var(--fg)'
+function StatusRow({ label, value, accent, last }: { label: string; value: string; accent?: 'ok' | 'warn'; last?: boolean }) {
+  const c = accent === 'ok' ? 'var(--ok)' : accent === 'warn' ? 'var(--warn)' : 'var(--fg)'
   return (
     <div
-      className="rounded-md px-3 py-2.5 text-center min-w-[80px]"
-      style={{ background: 'var(--surface-2)', border: '1px solid var(--hairline)' }}
+      className={`flex items-center justify-between gap-3 py-2 ${last ? '' : 'border-b'}`}
+      style={!last ? { borderColor: 'var(--hairline)' } : undefined}
     >
-      <p className="text-[9.5px] font-bold uppercase tracking-wider text-[var(--fg-mute)]">{label}</p>
-      <p className={`tabular-nums font-bold ${thin ? 'text-[16px]' : 'text-[20px]'} leading-tight mt-0.5`} style={{ color: c, letterSpacing: '-0.02em' }}>
+      <span className="text-[11px] font-mono uppercase tracking-wider text-[var(--fg-mute)]">{label}</span>
+      <span className="text-[14px] font-bold tabular-nums" style={{ color: c, letterSpacing: '-0.02em' }}>
         {value}
-      </p>
+      </span>
     </div>
   )
 }
