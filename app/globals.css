@@ -144,12 +144,14 @@ body {
   filter: brightness(1.05);
 }
 
-.btn-outline {
+.btn-outline,
+.btn-secondary {
   background: transparent;
   color: var(--fg);
   border: 1px solid var(--hairline);
 }
-.btn-outline:hover:not(:disabled) {
+.btn-outline:hover:not(:disabled),
+.btn-secondary:hover:not(:disabled) {
   border-color: var(--hairline-2);
   background: var(--surface-2);
 }

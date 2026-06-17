@@ -1,7 +1,6 @@
 import Link from 'next/link'
 import { ArrowRight, Cpu, Zap, Activity, RefreshCw, Lock, Star, Check, Crown, Store, User as UserIcon, Sparkles } from 'lucide-react'
 import { supabaseServer, supabaseAdmin } from '@/lib/supabase/server'
-import { Brand } from '@/components/Brand'
 import { Logo } from '@/components/Logo'
 import { PublicHeaderNav } from '@/components/PublicHeaderNav'
 import { formatPrice, relativeTime } from '@/lib/utils'
@@ -81,58 +80,84 @@ export default async function HomePage() {
 
       <main className="flex-1">
 
-        {/* ─── HERO ──────────────────────────────────────────────── */}
-        <section className="relative overflow-hidden">
+        {/* ─── HERO — Polar/Clarasight vibe: bigger type, technical backdrop ─ */}
+        <section className="relative overflow-hidden border-b" style={{ borderColor: 'var(--hairline)' }}>
+          {/* Dot grid pattern — technical, not decorative */}
           <div
-            className="absolute inset-0 pointer-events-none"
+            className="absolute inset-0 pointer-events-none opacity-[0.12]"
             style={{
-              background:
-                'radial-gradient(ellipse 900px 500px at 25% 10%, rgba(240,164,183,0.10), transparent 60%),' +
-                'radial-gradient(ellipse 700px 500px at 80% 60%, rgba(162,200,238,0.10), transparent 65%)',
+              backgroundImage: 'radial-gradient(circle, var(--fg) 1px, transparent 1px)',
+              backgroundSize: '24px 24px',
+              maskImage: 'linear-gradient(to bottom, black 0%, transparent 85%)',
+              WebkitMaskImage: 'linear-gradient(to bottom, black 0%, transparent 85%)',
             }}
           />
-          <div className="container-x relative pt-16 md:pt-24 pb-20 md:pb-24">
-            <div className="max-w-[820px]">
+          {/* Single thin light beam top-right — Polar Signals signature move */}
+          <div
+            className="absolute -top-32 right-0 w-[600px] h-[600px] pointer-events-none"
+            style={{
+              background:
+                'radial-gradient(closest-side, rgba(240,164,183,0.10), transparent 70%)',
+              filter: 'blur(20px)',
+            }}
+          />
+
+          <div className="container-x relative pt-20 md:pt-28 pb-16 md:pb-20">
+            {/* Eyebrow chip */}
+            <div className="inline-flex items-center gap-2 mb-6 px-2.5 py-1 rounded-full text-[11.5px] font-mono uppercase tracking-[0.14em]"
+              style={{ background: 'var(--surface)', border: '1px solid var(--hairline)', color: 'var(--fg-dim)' }}>
+              <span className="w-1 h-1 rounded-full" style={{ background: 'var(--brand)' }} />
+              Marketplace · Auth engine · One platform
+            </div>
+
+            <div className="max-w-[900px]">
               <h1
-                className="text-[44px] md:text-[60px] font-bold tracking-tight leading-[1.02] mb-6"
-                style={{ letterSpacing: '-0.035em' }}
+                className="text-[48px] md:text-[76px] font-bold tracking-tight leading-[1.02] mb-7"
+                style={{ letterSpacing: '-0.04em' }}
               >
-                Private tools, sold the way they{' '}
-                <span
-                  style={{
-                    background: 'var(--brand-gradient)',
-                    WebkitBackgroundClip: 'text',
-                    backgroundClip: 'text',
-                    WebkitTextFillColor: 'transparent',
-                  }}
-                >should be.</span>
+                Private tools,{' '}
+                <span style={{ color: 'var(--brand)' }}>sold the way</span>
+                {' '}they should be.
               </h1>
 
-              <p className="text-[16px] md:text-[17px] text-[var(--fg-dim)] leading-relaxed mb-9 max-w-[620px]">
+              <p className="text-[16px] md:text-[18px] text-[var(--fg-dim)] leading-[1.6] mb-10 max-w-[640px]">
                 OP is a marketplace and license engine in one. Buy lifetime tools with HWID-bound keys.
-                Become a reseller and white-label our catalog. Or embed our auth API in your own apps —
-                seven SDKs, ten lines of code.
+                Resell our catalog with your branding. Or embed our auth API into your own apps —
+                14 SDKs, 10 lines of code.
               </p>
 
-              <div className="flex items-center gap-3 flex-wrap mb-5">
-                <Link href="/products" className="btn btn-primary">
-                  Browse products <ArrowRight size={14} />
+              <div className="flex items-center gap-3 flex-wrap">
+                <Link href="/products" className="btn btn-primary btn-lg">
+                  Browse products <ArrowRight size={15} />
                 </Link>
                 {!signedIn && (
-                  <Link href="/register" className="btn btn-secondary">
+                  <Link href="/register" className="btn btn-outline btn-lg">
                     Create free account
                   </Link>
                 )}
                 {signedIn && (
-                  <Link href="/dashboard" className="btn btn-secondary">
+                  <Link href="/dashboard" className="btn btn-outline btn-lg">
                     Open dashboard
                   </Link>
                 )}
               </div>
+            </div>
+          </div>
 
-              <p className="text-[12px] text-[var(--fg-mute)]">
-                Educational use only · No card needed to browse · Cancel anytime
-              </p>
+          {/* Metric / trust strip — Polar/Clarasight pattern */}
+          <div className="relative border-t" style={{ borderColor: 'var(--hairline)', background: 'rgba(10,13,20,0.5)' }}>
+            <div className="container-x py-7">
+              <div className="flex items-center justify-between gap-6 flex-wrap">
+                <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-[var(--fg-mute)]">
+                  Built for shipping
+                </p>
+                <div className="flex items-center gap-8 md:gap-12 flex-wrap">
+                  <MetricInline value="14" label="SDK languages" />
+                  <MetricInline value="<60s" label="setup time" />
+                  <MetricInline value="HWID" label="locked keys" />
+                  <MetricInline value="99.9%" label="auth uptime" />
+                </div>
+              </div>
             </div>
           </div>
         </section>
@@ -268,37 +293,42 @@ export default async function HomePage() {
         )}
 
 
-        {/* ─── FINAL CTA ─────────────────────────────────────────── */}
-        <section className="py-20 border-t" style={{ borderColor: 'var(--hairline)' }}>
-          <div className="container-x">
-            <div
-              className="rounded-2xl py-16 px-6 text-center max-w-[760px] mx-auto"
-              style={{
-                background:
-                  'radial-gradient(ellipse 800px 400px at center 0%, rgba(240,164,183,0.08), transparent 60%),' +
-                  'var(--surface)',
-                border: '1px solid var(--hairline)',
-              }}
-            >
-              <Brand size="md" href={undefined} className="mx-auto mb-6 flex justify-center" />
-              <h2 className="text-[28px] md:text-[36px] font-bold tracking-tight mb-3" style={{ letterSpacing: '-0.025em' }}>
-                {signedIn ? 'Welcome back.' : 'Ready in 30 seconds.'}
-              </h2>
-              <p className="text-[14.5px] text-[var(--fg-dim)] mb-7 max-w-[440px] mx-auto leading-relaxed">
-                {signedIn
-                  ? 'Your dashboard, licenses, and resells are waiting.'
-                  : 'Free to start. Browse the catalog, link Discord for $1, try the SDK — no card required.'}
-              </p>
-              <div className="flex items-center justify-center gap-3 flex-wrap">
-                {signedIn ? (
-                  <Link href="/dashboard" className="btn btn-primary">Open dashboard <ArrowRight size={13} /></Link>
-                ) : (
-                  <>
-                    <Link href="/register" className="btn btn-primary">Create account <ArrowRight size={13} /></Link>
-                    <Link href="/products"  className="btn btn-secondary">Browse products</Link>
-                  </>
-                )}
-              </div>
+        {/* ─── FINAL CTA — Polar Signals-style: clean, big, no card ───── */}
+        <section className="relative py-28 md:py-36 border-t overflow-hidden" style={{ borderColor: 'var(--hairline)' }}>
+          {/* Subtle backdrop */}
+          <div
+            className="absolute inset-0 pointer-events-none opacity-[0.08]"
+            style={{
+              backgroundImage: 'radial-gradient(circle, var(--fg) 1px, transparent 1px)',
+              backgroundSize: '32px 32px',
+              maskImage: 'radial-gradient(ellipse 60% 50% at 50% 50%, black, transparent 75%)',
+              WebkitMaskImage: 'radial-gradient(ellipse 60% 50% at 50% 50%, black, transparent 75%)',
+            }}
+          />
+          <div className="container-x relative text-center">
+            <p className="label-mono mb-5">
+              {signedIn ? 'Welcome back' : 'Get started'}
+            </p>
+            <h2 className="text-[40px] md:text-[60px] font-bold tracking-tight mb-5 leading-[1.05] max-w-[800px] mx-auto"
+              style={{ letterSpacing: '-0.035em' }}>
+              {signedIn
+                ? 'Your dashboard is ready.'
+                : <>Ship your tool in <span style={{ color: 'var(--brand)' }}>60 seconds.</span></>}
+            </h2>
+            <p className="text-[15px] md:text-[16.5px] text-[var(--fg-dim)] mb-9 max-w-[520px] mx-auto leading-relaxed">
+              {signedIn
+                ? 'Your dashboard, licenses, and resells are waiting.'
+                : 'Free to start. Browse the catalog, link Discord for $1, try the SDK — no card required.'}
+            </p>
+            <div className="flex items-center justify-center gap-3 flex-wrap">
+              {signedIn ? (
+                <Link href="/dashboard" className="btn btn-primary btn-lg">Open dashboard <ArrowRight size={14} /></Link>
+              ) : (
+                <>
+                  <Link href="/register" className="btn btn-primary btn-lg">Create account <ArrowRight size={14} /></Link>
+                  <Link href="/products"  className="btn btn-outline btn-lg">Browse products</Link>
+                </>
+              )}
             </div>
           </div>
         </section>
@@ -361,10 +391,10 @@ function Section({ eyebrow, title, description, link, children }: {
   return (
     <section className="py-20 md:py-24 border-t" style={{ borderColor: 'var(--hairline)' }}>
       <div className="container-x">
-        <header className="flex items-end justify-between gap-6 mb-10 flex-wrap">
-          <div className="max-w-[640px]">
-            <p className="label-mono mb-3">{eyebrow}</p>
-            <h2 className="text-[28px] md:text-[34px] font-bold tracking-tight mb-3" style={{ letterSpacing: '-0.025em' }}>
+        <header className="flex items-end justify-between gap-6 mb-12 flex-wrap">
+          <div className="max-w-[680px]">
+            <p className="label-mono mb-4">{eyebrow}</p>
+            <h2 className="text-[32px] md:text-[44px] font-bold tracking-tight mb-4 leading-[1.1]" style={{ letterSpacing: '-0.03em' }}>
               {title}
             </h2>
             {description && <p className="text-[14.5px] text-[var(--fg-dim)] leading-relaxed">{description}</p>}
@@ -383,6 +413,19 @@ function Section({ eyebrow, title, description, link, children }: {
 
 
 /* ─── Sub-components ─────────────────────────────────────────────── */
+function MetricInline({ value, label }: { value: string; label: string }) {
+  return (
+    <div className="flex items-baseline gap-2">
+      <span className="text-[20px] md:text-[22px] font-bold tabular-nums tracking-tight" style={{ letterSpacing: '-0.02em', color: 'var(--fg)' }}>
+        {value}
+      </span>
+      <span className="text-[12px] text-[var(--fg-mute)] font-medium">
+        {label}
+      </span>
+    </div>
+  )
+}
+
 function TierCard({ icon, tier, price, tagline, features, cta, ctaHref, featured }: {
   icon: React.ReactNode; tier: string; price: string; tagline: string; features: string[]; cta: string; ctaHref: string; featured?: boolean;
 }) {
